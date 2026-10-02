@@ -1,0 +1,15 @@
+# Build output
+build/
+app/build/
+.gradle/
+local.properties
+*.apk
+*.aab
+*.dex
+# IDE
+.idea/
+*.iml
+.DS_Store
+# Keystore debug sinh tự động
+*.keystore
+*.jks
