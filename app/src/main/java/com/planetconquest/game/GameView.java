@@ -110,7 +110,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private final ArrayList<String> dLabels = new ArrayList<String>(), dTexts = new ArrayList<String>();
     private final ArrayList<Integer> dColors = new ArrayList<Integer>();
     private final ArrayList<UiButton> dBtns = new ArrayList<UiButton>();
-    private final ArrayList<String> dSubLines = new ArrayList<String>();
+    private final ArrayList<String> dSubLines = new ArrayList<String>(), dTitleLines = new ArrayList<String>();
     private final ArrayList<ArrayList<String>> dSecLines = new ArrayList<ArrayList<String>>();
     private final RectF dCard = new RectF();
 
@@ -412,11 +412,13 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     private void dialogLayout() {
         float cw = Math.min(W - 32 * dp, 420 * dp), pad = 22 * dp, inner = cw - 2 * pad;
+        dTitleLines.clear();
+        dTitleLines.addAll(wrap(dTitle, 23 * dp, tfTitle, inner));
         dSubLines.clear();
         if (dSub != null) dSubLines.addAll(wrap(dSub, 14.5f * dp, tfReg, inner));
         dSecLines.clear();
         for (String s : dTexts) dSecLines.add(wrap(s, 15.5f * dp, tfReg, inner));
-        float h = pad + 32 * dp;
+        float h = pad + dTitleLines.size() * 31 * dp;
         if (!dSubLines.isEmpty()) h += 4 * dp + dSubLines.size() * 21 * dp;
         for (ArrayList<String> ls : dSecLines) h += 14 * dp + 18 * dp + ls.size() * 23 * dp;
         int n = dBtns.size();
@@ -693,11 +695,14 @@ public final class GameView extends View implements Choreographer.FrameCallback,
             String desc = endless ? "Bản đồ ngẫu nhiên, không hạn chế. Thiên thạch đâm vào hành tinh."
                     : intro ? "Học cách chơi: bạn và một đối thủ, bạn có nhiều đá hơn." : Levels.ALL[i].limit;
             String right = endless ? (best > 0 ? "Kỷ lục " + best : "3–10 hành tinh") : Levels.ALL[i].planets + " hành tinh";
-            float tx = r.left + 64 * dp, rightW = 92 * dp;
+            float tx = r.left + 64 * dp;
             text(c, name, tx, r.top + 24 * dp, 16 * dp, C_INK, tfBold, Paint.Align.LEFT);
+            if (isDone) {
+                txt.setTextSize(16 * dp); txt.setTypeface(tfBold);
+                text(c, intro ? "Đã học" : "Đã qua", tx + txt.measureText(name) + 10 * dp, r.top + 24 * dp, 12 * dp, C_YOU, tfBold, Paint.Align.LEFT);
+            }
             text(c, right, r.right - 14 * dp, r.top + 24 * dp, 12 * dp, C_MUTED, tfReg, Paint.Align.RIGHT);
-            if (isDone) text(c, intro ? "Đã học" : "Đã qua", r.right - 14 * dp, r.top + 44 * dp, 12 * dp, C_YOU, tfBold, Paint.Align.RIGHT);
-            ArrayList<String> ls = wrap(desc, 12.5f * dp, tfReg, r.right - tx - rightW + 70 * dp - 14 * dp);
+            ArrayList<String> ls = wrap(desc, 12.5f * dp, tfReg, r.right - tx - 14 * dp);
             for (int k = 0; k < Math.min(2, ls.size()); k++) {
                 String s = ls.get(k);
                 if (k == 1 && ls.size() > 2) s = s + "…";
@@ -716,8 +721,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         fill.setShader(null);
         stroke.setColor(C_LINE); stroke.setStrokeWidth(dp); c.drawRoundRect(r, 22 * dp, 22 * dp, stroke);
         float pad = 22 * dp, x = r.left + pad, y = r.top + pad;
-        text(c, dTitle, x, y + 14 * dp, 24 * dp, dTitleColor, tfTitle, Paint.Align.LEFT);
-        y += 32 * dp;
+        for (String s : dTitleLines) { text(c, s, x, y + 14 * dp, 23 * dp, dTitleColor, tfTitle, Paint.Align.LEFT); y += 31 * dp; }
         if (!dSubLines.isEmpty()) {
             y += 4 * dp;
             for (String s : dSubLines) { text(c, s, x, y + 10 * dp, 14.5f * dp, C_MUTED, tfReg, Paint.Align.LEFT); y += 21 * dp; }

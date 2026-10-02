@@ -21,7 +21,7 @@ public final class Levels {
                 "Không có hạn chế. Đối thủ đứng yên để bạn tập.",
                 "Làm theo từng bước hiện trên màn hình.");
         intro.intro = true; intro.passiveAi = true; intro.enemyArmor = 30; intro.enemyProd = .3f;
-        intro.fixed = new float[][]{{.5f, .9f, .09f}, {.5f, .2f, .075f}};
+        intro.fixed = new float[][]{{.5f, .9f, .09f}, {.5f, .28f, .075f}};
 
         Level l1 = make("Làm quen", 3, 1101, 30, 16, 20, 4, "Không thể nâng cấp hành tinh.",
                 "Không có nâng cấp nên tốc độ là tất cả: chiếm hành tinh yếu trước để có thêm nguồn sinh đá, rồi mới đánh hành tinh mạnh.");
