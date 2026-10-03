@@ -1,4 +1,4 @@
-package com.planetconquest.game;
+package com.planetconquest.game.ui;
 
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -11,7 +11,6 @@ import android.graphics.Shader;
 import android.graphics.SweepGradient;
 
 import com.planetconquest.game.engine.model.Faction;
-import com.planetconquest.game.ui.Palette;
 import com.planetconquest.game.engine.util.ColorUtil;
 import com.planetconquest.game.engine.util.MathUtil;
 
@@ -28,7 +27,7 @@ import static com.planetconquest.game.engine.util.MathUtil.sin;
  * Shader, path và số ngẫu nhiên tạo sẵn; mỗi khung hình chỉ biến đổi canvas, không cấp phát.
  * Chừa trống phần trên giữa (tiêu đề) và khoảng 25% dưới cùng (nút).
  */
-final class WelcomeScene {
+public final class WelcomeScene {
 
     // x, y (tỉ lệ màn hình), bán kính (× cạnh ngắn), phe, độ sâu parallax, tốc độ trôi dải mây, số đá quay quanh
     private static final float[][] PL = {
@@ -85,7 +84,7 @@ final class WelcomeScene {
     private final float[] jit = new float[FRAG + DUST];
     private final float[] fgX = new float[FG], fgV = new float[FG], fgSize = new float[FG];
 
-    WelcomeScene(float dp) {
+    public WelcomeScene(float dp) {
         this.dp = dp;
         fill.setStyle(Paint.Style.FILL);
         stroke.setStyle(Paint.Style.STROKE);
@@ -141,7 +140,7 @@ final class WelcomeScene {
         }
     }
 
-    void setSize(float w, float h) {
+    public void setSize(float w, float h) {
         W = w; H = h; U = Math.min(w, h);
         if (W <= 0 || H <= 0) return;
         for (int i = 0; i < PL.length; i++) {
@@ -174,7 +173,7 @@ final class WelcomeScene {
         b0x = x0; b0y = y0; bdx = (x1 - x0) / bLen; bdy = (y1 - y0) / bLen;
     }
 
-    void draw(Canvas c, float t) {
+    public void draw(Canvas c, float t) {
         if (W <= 0 || haloS == null) return;
         float ph = MathUtil.TAU * t / CAM_PERIOD;
         zoom = .03f * (.5f - .5f * cos(ph));
