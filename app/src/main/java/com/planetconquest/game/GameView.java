@@ -67,6 +67,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private final HashSet<Integer> done = new HashSet<Integer>();
     private int best;
     private final Sfx sfx;
+    private final WelcomeScene scene;
     private boolean introDone;
     private final Random rnd = new Random();
 
@@ -120,6 +121,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         dp = getResources().getDisplayMetrics().density;
         prefs = ctx.getSharedPreferences("planet_conquest", Context.MODE_PRIVATE);
         sfx = new Sfx(ctx, prefs);
+        scene = new WelcomeScene(dp);
         loadProgress();
         tfReg = Typeface.create("sans-serif", Typeface.NORMAL);
         tfBold = Typeface.create("sans-serif", Typeface.BOLD);
@@ -354,6 +356,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     protected void onSizeChanged(int w, int h, int ow, int oh) {
         W = w; H = h;
         eng.setSize(w, h, dp);
+        scene.setSize(w, h);
         buildBg();
         layoutUi();
     }
@@ -649,30 +652,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     // ================= Màn Welcome =================
     private void drawWelcome(Canvas c) {
-        float t = welcomeT, cx = W / 2, cy = H * .5f, R = Math.min(W, H) * .15f;
-        float ex = W * .2f, ey = H * .32f, er = R * .42f;
-        drawPlanetBody(c, ex, ey, er, 1, 1.3f);
-        drawPlanetBody(c, W * .82f, H * .66f, R * .36f, 2, 2.1f);
-        stroke.setStrokeWidth(2.6f * dp);
-        for (int i = 0; i < 8; i++) {                       // một dòng đá bay từ hành tinh của bạn sang đối thủ
-            float u = (t * .3f + i * .055f) % 1f, mx = (cx + ex) / 2 + 40 * dp, my = (cy + ey) / 2;
-            float x = (1 - u) * (1 - u) * cx + 2 * (1 - u) * u * mx + u * u * ex;
-            float y = (1 - u) * (1 - u) * cy + 2 * (1 - u) * u * my + u * u * ey;
-            fill.setColor(alpha(FL[0], Math.min(1, (1 - u) * 3)));
-            c.drawCircle(x, y, 2.6f * dp, fill);
-        }
-        drawPlanetBody(c, cx, cy, R, 0, .4f);
-        int[] cnt = {12, 18, 24};
-        float[] spd = {.6f, -.4f, .28f};
-        for (int k = 0; k < 3; k++) {
-            float rad = R + (14 + 10 * k) * dp;
-            stroke.setColor(alpha(C_YOU, .12f)); stroke.setStrokeWidth(dp); c.drawCircle(cx, cy, rad, stroke);
-            fill.setColor(alpha(C_YOU, .92f));
-            for (int i = 0; i < cnt[k]; i++) {
-                float a = t * spd[k] + i * TAU / cnt[k];
-                c.drawCircle(cx + cos(a) * rad, cy + sin(a) * rad, 2.1f * dp, fill);
-            }
-        }
+        scene.draw(c, welcomeT);
         float ty = Math.max(80 * dp, H * .13f);
         text(c, "Planet", W / 2, ty, 44 * dp, C_INK, tfTitle, Paint.Align.CENTER);
         text(c, "Conquest", W / 2, ty + 48 * dp, 44 * dp, C_INK, tfTitle, Paint.Align.CENTER);
