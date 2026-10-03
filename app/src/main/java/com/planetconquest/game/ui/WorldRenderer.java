@@ -126,6 +126,12 @@ public final class WorldRenderer extends Painter {
 
     private void drawPlanetBody(Canvas c, float x, float y, float R, int owner, float seed) {
         int col = FC[owner];
+        // LỖI ĐÃ SỬA: cả hành tinh (quầng sáng + thân) bị mờ đi rồi hiện lại như đang fade in/out.
+        // Paint.setShader KHÔNG đặt lại màu/alpha của paint; khi có shader, alpha của paint vẫn nhân vào kết quả.
+        // `fill` là paint dùng chung, còn alpha của nó là của lần fill.setColor(...) cuối cùng ở khung trước
+        // (hạt vỡ mờ dần, thông báo fade trong GameView, chấm quỹ đạo alpha .92...). Nên độ sáng của hành tinh
+        // chạy theo nhịp fade của những thứ đó. Luôn đặt lại màu đục trước khi vẽ bằng shader.
+        fill.setColor(0xFFFFFFFF);
         fill.setShader(new RadialGradient(x, y, R * 2.1f, new int[]{alpha(col, .34f), alpha(col, .34f), alpha(col, 0)}, new float[]{0, .43f, 1}, Shader.TileMode.CLAMP));
         c.drawCircle(x, y, R * 2.1f, fill);
         fill.setShader(new RadialGradient(x - R * .35f, y - R * .4f, R * 1.45f, new int[]{FL[owner], col, FD[owner]}, new float[]{0, .5f, 1}, Shader.TileMode.CLAMP));
