@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planet Conquest – UI hành tinh</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <canvas id="stage" width="360" height="420"></canvas>
+  <section class="panel">
+    <h1>Hành tinh</h1>
+    <label>Phe
+      <select id="owner"></select>
+    </label>
+    <label>Đá (<b id="rocksV"></b>)
+      <input id="rocks" type="range" min="0" max="100" value="23">
+    </label>
+    <label>Giáp (<b id="armorV"></b>)
+      <input id="armor" type="range" min="0" max="50" value="10" step="10">
+    </label>
+    <label>Cấp (<b id="levelV"></b>)
+      <input id="level" type="range" min="1" max="5" value="2">
+    </label>
+    <label>Tiến độ nâng cấp (<b id="progV"></b>)
+      <input id="prog" type="range" min="0" max="50" value="9">
+    </label>
+    <label class="row"><input id="captured" type="checkbox"> Đã từng bị chiếm (tối đa cấp 4)</label>
+    <label class="row"><input id="fog" type="checkbox"> Sương mù (hiện “?”)</label>
+    <label class="row"><input id="zoom" type="checkbox"> Phóng to 2×</label>
+    <label class="row"><input id="pause" type="checkbox"> Tạm dừng quỹ đạo</label>
+    <hr>
+    <h1>Hiệu ứng</h1>
+    <label class="row"><input id="auto" type="checkbox" checked> Tự sinh đá (1 + 0,5/cấp mỗi giây)</label>
+    <label class="row"><input id="sel" type="checkbox"> Đá đang được chọn (vàng)</label>
+    <label>Số đá được chọn <input id="selN" type="range" min="0" max="60" value="12"></label>
+    <label class="row"><input id="drag" type="checkbox"> Vòng chọn khi kéo</label>
+    <label class="row"><input id="hint" type="checkbox"> Vòng gợi ý đầu ván</label>
+    <label class="row"><input id="range" type="checkbox"> Vòng tầm bay</label>
+    <label>Vòng đích + nhãn
+      <select id="target"><option value="none">Không</option><option value="attack">Tấn công</option><option value="move">Chuyển quân</option><option value="far">Ngoài tầm</option><option value="cancel">Hủy</option></select>
+    </label>
+    <div class="btns">
+      <button id="btnAttack">Địch tấn công</button>
+      <button id="btnFeed">Tiếp quân</button>
+      <button id="btnUpg">Nạp nâng cấp</button>
+      <button id="btnAst">Thiên thạch</button>
+      <button id="btnCd">Nạp đạn</button>
+      <button id="flash">Nháy: chiếm (1.0)</button>
+      <button id="flashUp">Nháy: lên cấp (.8)</button>
+      <button id="flashAst">Nháy: thiên thạch (.5)</button>
+    </div>
+  </section>
+</main>
+<script src="planet.js"></script>
+</body>
+</html>
