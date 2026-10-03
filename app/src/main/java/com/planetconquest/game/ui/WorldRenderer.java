@@ -277,13 +277,12 @@ public final class WorldRenderer extends Painter {
             path.reset();
             path.moveTo(pt.px[0], pt.py[0]);
             for (int i = 1; i < pt.pn; i++) path.lineTo(pt.px[i], pt.py[i]);
-            fill.setColor(0x144FF0B4);
-            path.close(); c.drawPath(path, fill);
-            path.reset();
-            path.moveTo(pt.px[0], pt.py[0]);
-            for (int i = 1; i < pt.pn; i++) path.lineTo(pt.px[i], pt.py[i]);
-            stroke.setColor(0xF24FF0B4); stroke.setStrokeWidth(3 * dp);
+            stroke.setColor(0x664FF0B4); stroke.setStrokeWidth(2 * dp);        // nét tay mờ, hình tròn được chọn là vòng đậm
             c.drawPath(path, stroke);
+            if (pt.cr > 0) {
+                fill.setColor(0x144FF0B4); c.drawCircle(pt.cx, pt.cy, pt.cr, fill);
+                stroke.setColor(0xF24FF0B4); stroke.setStrokeWidth(3 * dp); c.drawCircle(pt.cx, pt.cy, pt.cr, stroke);
+            }
             Selection lv = pt.live;
             if (lv != null) {
                 stroke.setColor(C_GOLD); stroke.setStrokeWidth(1.5f * dp);

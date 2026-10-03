@@ -8,8 +8,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 APP_ID=com.planetconquest.game
-VERSION_CODE=2
-VERSION_NAME=0.2.0
+VERSION_CODE=3
+VERSION_NAME=0.3.0
 MIN_SDK=21
 TARGET_SDK=34
 OUT=build
