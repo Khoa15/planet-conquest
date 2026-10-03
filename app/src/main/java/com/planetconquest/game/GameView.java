@@ -40,7 +40,7 @@ import java.util.Random;
  */
 public final class GameView extends View implements Choreographer.FrameCallback, Engine.Listener {
 
-    static final String VERSION = "0.1.0";
+    static final String VERSION = "0.2.0";
 
     static final int S_WELCOME = 0, S_LEVELS = 1, S_BRIEF = 2, S_PLAY = 3, S_PAUSE = 4, S_END = 5;
     static final int B_PLAY = 1, B_TUTORIAL = 2, B_BACK = 3, B_GO = 4, B_PAUSE = 5, B_RESUME = 6, B_RESTART = 7,
