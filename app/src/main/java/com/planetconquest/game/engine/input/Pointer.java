@@ -9,6 +9,8 @@ import java.util.Arrays;
 /** Trạng thái một ngón tay đang chạm: điểm đầu, điểm hiện tại, chế độ cử chỉ, đường khoanh và vùng chọn tạm. */
 public final class Pointer {
     public float sx, sy, x, y, len, lockX, lockY;
+    /** Hình tròn đang được chọn (làm tròn từ nét vẽ); cr = 0 khi chưa có. */
+    public float cx, cy, cr;
     public Planet startPlanet, hover;
     public GestureMode mode = GestureMode.UNDECIDED;
     public final ArrayList<Planet> qsel = new ArrayList<Planet>();

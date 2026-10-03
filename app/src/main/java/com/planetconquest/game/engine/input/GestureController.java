@@ -24,7 +24,9 @@ import static com.planetconquest.game.engine.util.MathUtil.inPoly;
  */
 public final class GestureController {
     private final Engine eng;
+    private static final int CIRCLE_POINTS = 40;
     private final float[] dotX = new float[64], dotY = new float[64];
+    private final float[] circX = new float[CIRCLE_POINTS], circY = new float[CIRCLE_POINTS];
     private Pointer ptr;
     private Selection selection;
 
@@ -98,7 +100,7 @@ public final class GestureController {
 
     /** Gọi trước khi vẽ để có vùng chọn tạm thời khi đang khoanh. */
     public void updateLive() {
-        if (ptr != null && ptr.mode == GestureMode.LASSO) ptr.live = ptr.pn >= 3 ? computeSelection(ptr.px, ptr.py, ptr.pn) : null;
+        if (ptr != null && ptr.mode == GestureMode.LASSO) ptr.live = ptr.pn >= 3 ? circleSelection(ptr) : null;
     }
 
     private boolean lassoClosed(Pointer p) {
@@ -107,7 +109,7 @@ public final class GestureController {
     }
 
     private void tryLock() {
-        Selection s = computeSelection(ptr.px, ptr.py, ptr.pn);
+        Selection s = circleSelection(ptr);
         if (s.total() > 0) {
             selection = s; eng.haptic(Haptic.LIGHT); eng.event(GameEvent.LASSO);
             ptr.mode = GestureMode.CARRY; ptr.lockX = ptr.x; ptr.lockY = ptr.y;
@@ -119,7 +121,7 @@ public final class GestureController {
 
     private void finishLasso(Pointer p) {
         if (p.len < 90 * eng.dp() || bboxMin(p.px, p.py, p.pn) < 28 * eng.dp()) { eng.notice(Msg.LASSO_TOO_SMALL); return; }
-        Selection s = computeSelection(p.px, p.py, p.pn);
+        Selection s = circleSelection(p);
         if (s.total() > 0) { selection = s; eng.haptic(Haptic.LIGHT); eng.event(GameEvent.LASSO); }
         else eng.notice(Msg.LASSO_EMPTY);
     }
@@ -185,6 +187,25 @@ public final class GestureController {
     }
 
     // ---------- Vòng khoanh ----------
+    /**
+     * Nét vẽ tay bị làm tròn thành một hình tròn: tâm là tâm hộp bao, bán kính là khoảng cách trung bình tới tâm.
+     * Người chơi chỉ cần vẽ một vòng gần tròn là chọn được hết đá bên trong, không phải bao đúng từng vùng.
+     * Cũng ghi hình tròn vào p (cx, cy, cr) để giao diện vẽ.
+     */
+    private Selection circleSelection(Pointer p) {
+        float x0 = Float.MAX_VALUE, x1 = -Float.MAX_VALUE, y0 = Float.MAX_VALUE, y1 = -Float.MAX_VALUE;
+        for (int i = 0; i < p.pn; i++) { x0 = Math.min(x0, p.px[i]); x1 = Math.max(x1, p.px[i]); y0 = Math.min(y0, p.py[i]); y1 = Math.max(y1, p.py[i]); }
+        float cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, r = 0;
+        for (int i = 0; i < p.pn; i++) r += hyp(p.px[i] - cx, p.py[i] - cy);
+        r /= p.pn;
+        p.cx = cx; p.cy = cy; p.cr = r;
+        for (int i = 0; i < CIRCLE_POINTS; i++) {
+            double a = i * Math.PI * 2 / CIRCLE_POINTS;
+            circX[i] = cx + (float) Math.cos(a) * r; circY[i] = cy + (float) Math.sin(a) * r;
+        }
+        return computeSelection(circX, circY, CIRCLE_POINTS);
+    }
+
     public Selection computeSelection(float[] xs, float[] ys, int n) {
         Selection s = new Selection();
         if (n >= 3) {
