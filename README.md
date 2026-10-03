@@ -45,7 +45,7 @@ app/src/main/java/com/planetconquest/game/
   engine/               Logic Java thuần, không phụ thuộc Android
     Engine.java         Luật chơi, AI, va chạm, cử chỉ khoanh vòng / kéo thả
     Levels.java         Màn Hướng dẫn, 9 màn chiến dịch, bộ sinh màn Endless
-tools/EngineSim.java    Kiểm thử engine trên JVM (./build.sh test)
+app/src/test/java/      Kiểm thử JUnit 4 cho engine, chạy trên JVM (./build.sh test)
 prototype/web/          Bản prototype HTML5 ban đầu, giữ làm tham chiếu luật chơi
 ```
 
