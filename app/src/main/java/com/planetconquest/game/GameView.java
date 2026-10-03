@@ -825,7 +825,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private void drawIntroCue(Canvas c) {
         if (!eng.lvl.intro || introStep >= INTRO_STEPS.length || eng.ptr != null || eng.planets.size() < 2) return;
         Planet me = eng.planets.get(0), en = eng.planets.get(1);
-        float pulse = .5f + .5f * sin(eng.clock * 4);
+        final float pulse = .5f;   // đứng yên: vòng gợi ý quanh hành tinh không được nhấp nháy
         stroke.setColor(alpha(C_GOLD, .55f + .35f * pulse));
         stroke.setStrokeWidth(2.5f * dp);
         switch (introStep) {
@@ -871,7 +871,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
             Planet p = eng.planets.get(0);
             stroke.setColor(alpha(C_YOU, .8f)); stroke.setStrokeWidth(2 * dp);
             dashed(true, eng.clock * .3f);
-            c.drawCircle(p.x, p.y, eng.radiusOf(p) + (14 + 3 * sin(eng.clock * 4)) * dp, stroke);
+            c.drawCircle(p.x, p.y, eng.radiusOf(p) + 14 * dp, stroke);
             dashed(false, 0);
         }
         if (screen == S_PLAY) drawIntroCue(c);
