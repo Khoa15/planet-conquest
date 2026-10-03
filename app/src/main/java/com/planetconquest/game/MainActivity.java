@@ -50,6 +50,12 @@ public final class MainActivity extends Activity {
         super.onPause();
     }
 
+    @Override
+    protected void onDestroy() {
+        view.onHostDestroy();
+        super.onDestroy();
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void onBackPressed() {
