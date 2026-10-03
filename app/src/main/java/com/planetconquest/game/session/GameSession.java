@@ -57,6 +57,19 @@ public final class GameSession {
     public int endlessMap() { return endlessMap; }
     public int introStep() { return introStep; }
 
+    /** Màn nên chơi tiếp theo tiến độ: Hướng dẫn nếu chưa học, rồi màn chiến dịch đầu tiên chưa qua; -1 (Endless) khi đã qua hết. */
+    public int nextLevel() {
+        if (!progress.isIntroDone()) return 0;
+        for (int i = 1; i < Levels.ALL.length; i++) if (!progress.isLevelDone(i)) return i;
+        return -1;
+    }
+
+    /** Bắt đầu ngay màn nextLevel(). */
+    public void startNext() {
+        int next = nextLevel();
+        if (next < 0) newEndlessRun(); else startLevel(next);
+    }
+
     public void startLevel(int idx) {
         curLevel = idx; introStep = 0;
         eng.start(Levels.ALL[idx]);

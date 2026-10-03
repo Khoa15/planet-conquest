@@ -3,7 +3,8 @@
     <string name="app_name">Planet Conquest</string>
 
     <!-- Nút -->
-    <string name="btn_play">Chơi</string>
+    <string name="btn_play_now">Chơi ngay</string>
+    <string name="btn_map">Bản đồ</string>
     <string name="btn_tutorial">Hướng dẫn</string>
     <string name="btn_cancel">Hủy</string>
     <string name="btn_start">Bắt đầu</string>
