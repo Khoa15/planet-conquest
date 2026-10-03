@@ -23,7 +23,7 @@ public class MapGenerationTest extends EngineTestBase {
                 String where = "level " + li + " @" + (int) s[0] + "x" + (int) s[1];
                 assertEquals(where, L.planets, e.planets.size());
                 assertTrue("trong khung " + where, inBounds());
-                assertTrue("không chồng " + where, minDist() > 80 * e.dp);
+                assertTrue("không chồng " + where, minDist() > 80 * e.dp());
                 if (!Float.isInfinite(e.rangePx())) assertRangeConnected(where);
             }
         }
@@ -31,12 +31,12 @@ public class MapGenerationTest extends EngineTestBase {
 
     private void assertRangeConnected(String where) {
         float rp = e.rangePx(), far = 0;
-        for (Planet p : e.planets) far = Math.max(far, (float) Math.hypot(p.x - me().x, p.y - me().y));
+        for (Planet p : e.planets) far = Math.max(far, (float) Math.hypot(p.x() - me().x(), p.y() - me().y()));
         assertTrue("có hành tinh ngoài tầm " + where, far > rp * 1.1f);
         for (Planet p : e.planets) {
             if (p == me()) continue;
             boolean any = false;
-            for (Planet q : e.planets) if (q != p && Math.hypot(p.x - q.x, p.y - q.y) <= rp) any = true;
+            for (Planet q : e.planets) if (q != p && Math.hypot(p.x() - q.x(), p.y() - q.y()) <= rp) any = true;
             assertTrue("hành tinh cô lập " + where, any);
         }
     }
@@ -52,7 +52,7 @@ public class MapGenerationTest extends EngineTestBase {
                 int n = e.planets.size();
                 assertTrue(n >= 3 && n <= 10);
                 assertTrue(inBounds());
-                assertTrue(minDist() >= 70 * e.dp);
+                assertTrue(minDist() >= 70 * e.dp());
                 counts[n]++;
             }
             assertTrue(counts[3] > 0 && counts[10] > 0);

@@ -11,6 +11,6 @@ public final class EnemyProductionRule extends LevelRule {
 
     @Override
     public float productionRate(Planet p, float base) {
-        return !Faction.isPlayer(p.owner) && multiplier > 0 ? base * multiplier : base;
+        return !Faction.isPlayer(p.owner()) && multiplier > 0 ? base * multiplier : base;
     }
 }

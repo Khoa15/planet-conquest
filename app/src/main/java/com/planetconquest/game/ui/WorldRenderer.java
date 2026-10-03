@@ -47,18 +47,18 @@ public final class WorldRenderer extends Painter {
     }
 
     private void drawIntroCue(Canvas c) {
-        if (!eng.lvl.intro || session.introStep() >= GameSession.INTRO_STEP_COUNT || eng.pointer() != null || eng.planets().size() < 2) return;
+        if (!eng.level().intro || session.introStep() >= GameSession.INTRO_STEP_COUNT || eng.pointer() != null || eng.planets().size() < 2) return;
         Planet me = eng.planets().get(0), en = eng.planets().get(1);
-        float pulse = .5f + .5f * sin(eng.clock * 4);
+        float pulse = .5f + .5f * sin(eng.clock() * 4);
         stroke.setColor(alpha(C_GOLD, .55f + .35f * pulse));
         stroke.setStrokeWidth(2.5f * dp);
         switch (session.introStep()) {
             case 0: case 4: {
                 if (session.introStep() == 4 && eng.selection() != null) break;
-                dashed(true, eng.clock);
-                float r1 = me.radius() + 12 * dp, r2 = en.radius() + 14 * dp, d = (float) Math.hypot(en.x - me.x, en.y - me.y);
-                float ux = (en.x - me.x) / d, uy = (en.y - me.y) / d;
-                c.drawLine(me.x + ux * r1, me.y + uy * r1, en.x - ux * r2, en.y - uy * r2, stroke);
+                dashed(true, eng.clock());
+                float r1 = me.radius() + 12 * dp, r2 = en.radius() + 14 * dp, d = (float) Math.hypot(en.x() - me.x(), en.y() - me.y());
+                float ux = (en.x() - me.x()) / d, uy = (en.y() - me.y()) / d;
+                c.drawLine(me.x() + ux * r1, me.y() + uy * r1, en.x() - ux * r2, en.y() - uy * r2, stroke);
                 dashed(false, 0);
                 break;
             }
@@ -66,8 +66,8 @@ public final class WorldRenderer extends Painter {
                 if (eng.selection() != null) break;
                 int nr = eng.orbitRings(me, rings);
                 float rad = (nr > 0 ? rings[nr - 1] : me.radius()) + 16 * dp;
-                dashed(true, eng.clock);
-                c.drawCircle(me.x, me.y, rad, stroke);
+                dashed(true, eng.clock());
+                c.drawCircle(me.x(), me.y(), rad, stroke);
                 dashed(false, 0);
                 break;
             }
@@ -79,7 +79,7 @@ public final class WorldRenderer extends Painter {
                 break;
             }
             case 3:
-                c.drawCircle(me.x, me.y, me.radius() + (8 + 6 * pulse) * dp, stroke);
+                c.drawCircle(me.x(), me.y(), me.radius() + (8 + 6 * pulse) * dp, stroke);
                 break;
         }
     }
@@ -87,15 +87,15 @@ public final class WorldRenderer extends Painter {
     // ================= Thế giới game =================
     public void draw(Canvas c, boolean playing) {
         eng.updateLive();
-        Level L = eng.lvl;
-        if (!Float.isInfinite(eng.rangePx())) { tmpPlanets.clear(); for (Planet p : eng.planets()) if (Faction.isPlayer(p.owner)) tmpPlanets.add(p); drawRange(c, tmpPlanets, .16f); }
+        Level L = eng.level();
+        if (!Float.isInfinite(eng.rangePx())) { tmpPlanets.clear(); for (Planet p : eng.planets()) if (Faction.isPlayer(p.owner())) tmpPlanets.add(p); drawRange(c, tmpPlanets, .16f); }
         for (Planet p : eng.planets()) drawPlanet(c, p);
         for (Planet p : eng.planets()) drawOrbit(c, p);
-        if (playing && !L.intro && eng.time < 10 && eng.pointer() == null && eng.selection() == null && !eng.planets().isEmpty()) {
+        if (playing && !L.intro && eng.time() < 10 && eng.pointer() == null && eng.selection() == null && !eng.planets().isEmpty()) {
             Planet p = eng.planets().get(0);
             stroke.setColor(alpha(C_YOU, .8f)); stroke.setStrokeWidth(2 * dp);
-            dashed(true, eng.clock * .3f);
-            c.drawCircle(p.x, p.y, p.radius() + (14 + 3 * sin(eng.clock * 4)) * dp, stroke);
+            dashed(true, eng.clock() * .3f);
+            c.drawCircle(p.x(), p.y(), p.radius() + (14 + 3 * sin(eng.clock() * 4)) * dp, stroke);
             dashed(false, 0);
         }
         if (playing) drawIntroCue(c);
@@ -120,7 +120,7 @@ public final class WorldRenderer extends Painter {
         stroke.setPathEffect(new DashPathEffect(new float[]{3 * dp, 8 * dp}, 0));
         stroke.setStrokeWidth(1.5f * dp);
         stroke.setColor(alpha(C_MUTED, a));
-        for (Planet s : srcs) c.drawCircle(s.x, s.y, rp, stroke);
+        for (Planet s : srcs) c.drawCircle(s.x(), s.y(), rp, stroke);
         stroke.setPathEffect(null);
     }
 
@@ -152,36 +152,36 @@ public final class WorldRenderer extends Painter {
     private void drawPlanet(Canvas c, Planet p) {
         float R = p.radius();
         boolean fg = eng.fogged(p);
-        drawPlanetBody(c, p.x, p.y, R, p.owner, p.seed);
-        if (p.level < eng.maxLvl(p) && !fg) {
+        drawPlanetBody(c, p.x(), p.y(), R, p.owner(), p.visual.seed);
+        if (p.level() < eng.maxLvl(p) && !fg) {
             stroke.setStrokeWidth(3 * dp);
-            stroke.setColor(alpha(C_GOLD, .16f)); c.drawCircle(p.x, p.y, R + 4 * dp, stroke);
-            if (p.upgradeProgress > 0) { stroke.setColor(C_GOLD); arc(c, p.x, p.y, R + 4 * dp, p.upgradeProgress / (float) Engine.upgradeCost(p.level)); }
+            stroke.setColor(alpha(C_GOLD, .16f)); c.drawCircle(p.x(), p.y(), R + 4 * dp, stroke);
+            if (p.upgradeProgress() > 0) { stroke.setColor(C_GOLD); arc(c, p.x(), p.y(), R + 4 * dp, p.upgradeProgress() / (float) Engine.upgradeCost(p.level())); }
         }
-        if (eng.rules().cooldownSeconds() > 0 && p.cooldown > 0) {
+        if (eng.rules().cooldownSeconds() > 0 && p.cooldown() > 0) {
             stroke.setStrokeWidth(2.5f * dp); stroke.setColor(0xD98FC8FF);
-            arc(c, p.x, p.y, R + 8 * dp, p.cooldown / eng.rules().cooldownSeconds());
+            arc(c, p.x(), p.y(), R + 8 * dp, p.cooldown() / eng.rules().cooldownSeconds());
         }
-        if (p.flash > 0) {
-            stroke.setStrokeWidth(3 * dp); stroke.setColor(alpha(0xFFFFFFFF, p.flash));
-            c.drawCircle(p.x, p.y, R * (1 + (1 - p.flash) * 1.3f), stroke);
+        if (p.visual.flash > 0) {
+            stroke.setStrokeWidth(3 * dp); stroke.setColor(alpha(0xFFFFFFFF, p.visual.flash));
+            c.drawCircle(p.x(), p.y(), R * (1 + (1 - p.visual.flash) * 1.3f), stroke);
         }
-        String n = fg ? "?" : String.valueOf(p.rocks);
+        String n = fg ? "?" : String.valueOf(p.rocks());
         float big = Math.max(13 * dp, R * .6f), small = Math.max(8 * dp, R * .27f);
-        text(c, n, p.x + dp, p.y - R * .24f + dp, big, 0x73000000, tfBold, Paint.Align.CENTER);
-        text(c, n, p.x, p.y - R * .24f, big, 0xFFFFFFFF, tfBold, Paint.Align.CENTER);
-        text(c, fg ? tx.levelPrefix + "?" : tx.levelPrefix + p.level + "/" + eng.maxLvl(p), p.x, p.y + R * .28f, small, 0xD9FFFFFF, tfBold, Paint.Align.CENTER);
-        text(c, tx.hpPrefix + (fg ? "?" : String.valueOf(p.hp())), p.x, p.y + R * .6f, small, 0xB3FFFFFF, tfBold, Paint.Align.CENTER);
+        text(c, n, p.x() + dp, p.y() - R * .24f + dp, big, 0x73000000, tfBold, Paint.Align.CENTER);
+        text(c, n, p.x(), p.y() - R * .24f, big, 0xFFFFFFFF, tfBold, Paint.Align.CENTER);
+        text(c, fg ? tx.levelPrefix + "?" : tx.levelPrefix + p.level() + "/" + eng.maxLvl(p), p.x(), p.y() + R * .28f, small, 0xD9FFFFFF, tfBold, Paint.Align.CENTER);
+        text(c, tx.hpPrefix + (fg ? "?" : String.valueOf(p.hp())), p.x(), p.y() + R * .6f, small, 0xB3FFFFFF, tfBold, Paint.Align.CENTER);
     }
 
     private void drawOrbit(Canvas c, Planet p) {
         if (eng.fogged(p)) return;
         int nr = eng.orbitRings(p, rings), dc = eng.orbitDots(p, dotX, dotY), hl = eng.highlightCount(p);
         stroke.setStrokeWidth(dp);
-        stroke.setColor(alpha(FC[p.owner], .12f));
-        for (int i = 0; i < nr; i++) c.drawCircle(p.x, p.y, rings[i], stroke);
-        float dot = Math.max(1.8f * dp, eng.unit * .0055f);
-        int normal = alpha(FC[p.owner], .92f);
+        stroke.setColor(alpha(FC[p.owner()], .12f));
+        for (int i = 0; i < nr; i++) c.drawCircle(p.x(), p.y(), rings[i], stroke);
+        float dot = Math.max(1.8f * dp, eng.unit() * .0055f);
+        int normal = alpha(FC[p.owner()], .92f);
         for (int i = 0; i < dc; i++) {
             boolean on = i < hl;
             fill.setColor(on ? C_GOLD : normal);
@@ -213,7 +213,7 @@ public final class WorldRenderer extends Painter {
         for (Rock r : eng.rocks()) {
             int o = r.owner;
             if (r.idle) {
-                float bx = sin(eng.clock * 1.4f + r.ph) * 1.4f * dp, by = cos(eng.clock * 1.1f + r.ph) * 1.4f * dp;
+                float bx = sin(eng.clock() * 1.4f + r.ph) * 1.4f * dp, by = cos(eng.clock() * 1.1f + r.ph) * 1.4f * dp;
                 stroke.setColor(alpha(FC[o], .5f)); stroke.setStrokeWidth(dp);
                 c.drawCircle(r.x + bx, r.y + by, r.rad + 2.5f * dp, stroke);
                 fill.setColor(FL[o]);
@@ -233,30 +233,30 @@ public final class WorldRenderer extends Painter {
         if (pt == null || pt.mode != GestureMode.QUICK) return;
         ArrayList<Planet> sel = pt.qsel;
         Planet h = pt.hover;
-        boolean cancel = h != null && sel.size() == 1 && h == sel.get(0), atk = h != null && !Faction.isPlayer(h.owner);
-        float dx = h != null ? h.x : pt.x, dy = h != null ? h.y : pt.y;
+        boolean cancel = h != null && sel.size() == 1 && h == sel.get(0), atk = h != null && !Faction.isPlayer(h.owner());
+        float dx = h != null ? h.x() : pt.x, dy = h != null ? h.y() : pt.y;
         boolean far = !cancel && eng.farFrom(sel, dx, dy);
         int col = cancel ? C_MUTED : far ? C_FAR : atk ? C_DANGER : C_YOU;
         drawRange(c, sel, .5f);
         stroke.setStrokeWidth(2 * dp);
-        dashed(true, eng.clock);
+        dashed(true, eng.clock());
         for (Planet s : sel) {
             float R = s.radius();
             stroke.setColor(C_YOU);
-            c.drawCircle(s.x, s.y, R + 9 * dp, stroke);
+            c.drawCircle(s.x(), s.y(), R + 9 * dp, stroke);
             if (cancel || s == h) continue;
             float ex = pt.x, ey = pt.y;
-            if (h != null) { float d = (float) Math.hypot(h.x - s.x, h.y - s.y), q = h.radius() + 6 * dp; if (d > 0) { ex = h.x - (h.x - s.x) / d * q; ey = h.y - (h.y - s.y) / d * q; } }
-            float d2 = (float) Math.hypot(ex - s.x, ey - s.y);
+            if (h != null) { float d = (float) Math.hypot(h.x() - s.x(), h.y() - s.y()), q = h.radius() + 6 * dp; if (d > 0) { ex = h.x() - (h.x() - s.x()) / d * q; ey = h.y() - (h.y() - s.y()) / d * q; } }
+            float d2 = (float) Math.hypot(ex - s.x(), ey - s.y());
             if (d2 < 1) continue;
             stroke.setColor(col);
-            c.drawLine(s.x + (ex - s.x) / d2 * R, s.y + (ey - s.y) / d2 * R, ex, ey, stroke);
+            c.drawLine(s.x() + (ex - s.x()) / d2 * R, s.y() + (ey - s.y()) / d2 * R, ex, ey, stroke);
         }
         dashed(false, 0);
-        if (h != null && !cancel) { stroke.setColor(col); stroke.setStrokeWidth(3 * dp); c.drawCircle(h.x, h.y, h.radius() + 11 * dp, stroke); }
+        if (h != null && !cancel) { stroke.setColor(col); stroke.setStrokeWidth(3 * dp); c.drawCircle(h.x(), h.y(), h.radius() + 11 * dp, stroke); }
         int tot = 0;
         for (Planet s : sel) { if (s == h && sel.size() > 1) continue; tot += eng.quickCount(s); }
-        float lx = h != null ? h.x : pt.x, ly = h != null ? h.y - h.radius() - 34 * dp : pt.y - 48 * dp;
+        float lx = h != null ? h.x() : pt.x, ly = h != null ? h.y() - h.radius() - 34 * dp : pt.y - 48 * dp;
         if (cancel) pill(c, lx, ly, tx.s(R.string.pill_cancel), col);
         else if (far) pill(c, lx, ly, tx.s(R.string.msg_out_of_range), col);
         else if (h != null) pill(c, lx, ly, atk ? tx.s(R.string.pill_attack, tot, eng.fogged(h) ? "?" : String.valueOf(h.hp())) : tx.s(R.string.pill_move, tot), col);
@@ -294,25 +294,25 @@ public final class WorldRenderer extends Painter {
         path.close();
         fill.setColor(0x0F4FF0B4); c.drawPath(path, fill);
         stroke.setColor(0xD94FF0B4); stroke.setStrokeWidth(2 * dp);
-        dashed(true, eng.clock * .6f); c.drawPath(path, stroke); dashed(false, 0);
+        dashed(true, eng.clock() * .6f); c.drawPath(path, stroke); dashed(false, 0);
         stroke.setColor(C_GOLD); stroke.setStrokeWidth(1.5f * dp);
         for (Rock r : sel.loose) if (!r.dead) c.drawCircle(r.x, r.y, r.rad + 3 * dp, stroke);
         int tot = sel.total();
         if (pt != null && pt.mode == GestureMode.CARRY) {
             Planet h = pt.hover;
-            boolean atk = h != null && !Faction.isPlayer(h.owner);
+            boolean atk = h != null && !Faction.isPlayer(h.owner());
             tmpPlanets.clear();
             for (Planet p : sel.planets) if (p != h) tmpPlanets.add(p);
-            float dx = h != null ? h.x : pt.x, dy = h != null ? h.y : pt.y;
+            float dx = h != null ? h.x() : pt.x, dy = h != null ? h.y() : pt.y;
             boolean far = eng.farFrom(tmpPlanets, dx, dy);
             int col = far ? C_FAR : atk ? C_DANGER : C_YOU;
             drawRange(c, tmpPlanets, .5f);
             float ex = pt.x, ey = pt.y;
-            if (h != null) { float d = (float) Math.hypot(h.x - sel.cx, h.y - sel.cy), q = h.radius() + 6 * dp; if (d > 0) { ex = h.x - (h.x - sel.cx) / d * q; ey = h.y - (h.y - sel.cy) / d * q; } }
+            if (h != null) { float d = (float) Math.hypot(h.x() - sel.cx, h.y() - sel.cy), q = h.radius() + 6 * dp; if (d > 0) { ex = h.x() - (h.x() - sel.cx) / d * q; ey = h.y() - (h.y() - sel.cy) / d * q; } }
             stroke.setColor(col); stroke.setStrokeWidth(2 * dp);
-            dashed(true, eng.clock); c.drawLine(sel.cx, sel.cy, ex, ey, stroke); dashed(false, 0);
-            if (h != null) { stroke.setStrokeWidth(3 * dp); c.drawCircle(h.x, h.y, h.radius() + 11 * dp, stroke); }
-            float lx = h != null ? h.x : pt.x, ly = h != null ? h.y - h.radius() - 34 * dp : pt.y - 48 * dp;
+            dashed(true, eng.clock()); c.drawLine(sel.cx, sel.cy, ex, ey, stroke); dashed(false, 0);
+            if (h != null) { stroke.setStrokeWidth(3 * dp); c.drawCircle(h.x(), h.y(), h.radius() + 11 * dp, stroke); }
+            float lx = h != null ? h.x() : pt.x, ly = h != null ? h.y() - h.radius() - 34 * dp : pt.y - 48 * dp;
             if (far) pill(c, lx, ly, tx.s(R.string.msg_out_of_range), col);
             else if (h != null) {
                 boolean only = sel.planets.size() == 1 && sel.planets.get(0) == h && sel.loose.isEmpty();

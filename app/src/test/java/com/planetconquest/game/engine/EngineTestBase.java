@@ -34,8 +34,8 @@ public abstract class EngineTestBase implements Engine.Listener {
     protected void freezeAi() { for (Planet p : e.planets) p.ai.think = 1e9f; }
 
     protected void drag(Planet a, float bx, float by) {
-        e.down(a.x, a.y);
-        e.move((a.x + bx) / 2, (a.y + by) / 2);
+        e.down(a.x(), a.y());
+        e.move((a.x() + bx) / 2, (a.y() + by) / 2);
         e.move(bx, by);
         e.up(bx, by);
     }
@@ -54,20 +54,20 @@ public abstract class EngineTestBase implements Engine.Listener {
         float m = Float.MAX_VALUE;
         for (int i = 0; i < e.planets.size(); i++) for (int j = i + 1; j < e.planets.size(); j++) {
             Planet a = e.planets.get(i), b = e.planets.get(j);
-            m = Math.min(m, (float) Math.hypot(a.x - b.x, a.y - b.y));
+            m = Math.min(m, (float) Math.hypot(a.x() - b.x(), a.y() - b.y()));
         }
         return m;
     }
 
     protected boolean inBounds() {
-        for (Planet p : e.planets) if (p.x < 25 * e.dp || p.x > e.W - 25 * e.dp || p.y < 70 * e.dp || p.y > e.H - 50 * e.dp) return false;
+        for (Planet p : e.planets) if (p.x() < 25 * e.dp() || p.x() > e.W() - 25 * e.dp() || p.y() < 70 * e.dp() || p.y() > e.H() - 50 * e.dp()) return false;
         return true;
     }
 
     /** Bắn một viên đá của người chơi thẳng vào hành tinh đích. */
     protected void shoot(Planet target) {
         Rock k = new Rock();
-        k.x = target.x + target.base; k.y = target.y; k.s = 600; k.owner = 0; k.t = target; k.rad = e.rockRadius;
+        k.x = target.x() + target.base(); k.y = target.y(); k.s = 600; k.owner = 0; k.setTarget(target); k.rad = e.rockRadius();
         e.rocks.add(k);
     }
 }

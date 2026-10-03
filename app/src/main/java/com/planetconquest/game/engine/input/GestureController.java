@@ -42,18 +42,18 @@ public final class GestureController {
     // ---------- Cử chỉ một ngón tay ----------
     public Planet hit(float x, float y) {
         Planet best = null;
-        float bd = Float.MAX_VALUE, slop = Math.max(22 * eng.dp, eng.unit * .05f);
+        float bd = Float.MAX_VALUE, slop = Math.max(22 * eng.dp(), eng.unit() * .05f);
         for (Planet p : eng.planets()) {
-            float d = hyp(p.x - x, p.y - y);
+            float d = hyp(p.x() - x, p.y() - y);
             if (d <= p.radius() + slop && d < bd) { best = p; bd = d; }
         }
         return best;
     }
 
-    public int quickCount(Planet s) { return s.rocks >= 1 ? Math.max(1, (int) Math.floor(s.rocks * Engine.QUICK_SEND)) : 0; }
+    public int quickCount(Planet s) { return s.rocks() >= 1 ? Math.max(1, (int) Math.floor(s.rocks() * Engine.QUICK_SEND)) : 0; }
 
     public void down(float x, float y) {
-        if (eng.over) return;
+        if (eng.over()) return;
         ptr = new Pointer();
         ptr.sx = ptr.x = x; ptr.sy = ptr.y = y;
         ptr.startPlanet = ptr.hover = hit(x, y);
@@ -63,17 +63,17 @@ public final class GestureController {
     public void move(float x, float y) {
         if (ptr == null) return;
         ptr.x = x; ptr.y = y; ptr.hover = hit(x, y);
-        if (ptr.mode == GestureMode.UNDECIDED && hyp(x - ptr.sx, y - ptr.sy) > 12 * eng.dp) {
-            if (ptr.startPlanet != null && Faction.isPlayer(ptr.startPlanet.owner)) { ptr.mode = GestureMode.QUICK; ptr.qsel.add(ptr.startPlanet); selection = null; }
+        if (ptr.mode == GestureMode.UNDECIDED && hyp(x - ptr.sx, y - ptr.sy) > 12 * eng.dp()) {
+            if (ptr.startPlanet != null && Faction.isPlayer(ptr.startPlanet.owner())) { ptr.mode = GestureMode.QUICK; ptr.qsel.add(ptr.startPlanet); selection = null; }
             else if (ptr.startPlanet == null) ptr.mode = GestureMode.LASSO;
             else ptr.mode = GestureMode.IGNORE;
         }
         if (ptr.mode == GestureMode.QUICK) {
             Planet h = ptr.hover;
-            if (h != null && Faction.isPlayer(h.owner) && !ptr.qsel.contains(h)) ptr.qsel.add(h);   // kéo qua nhiều hành tinh = chọn thêm
+            if (h != null && Faction.isPlayer(h.owner()) && !ptr.qsel.contains(h)) ptr.qsel.add(h);   // kéo qua nhiều hành tinh = chọn thêm
         } else if (ptr.mode == GestureMode.LASSO) {
             float d = hyp(x - ptr.px[ptr.pn - 1], y - ptr.py[ptr.pn - 1]);
-            if (d > 5 * eng.dp) { ptr.add(x, y); ptr.len += d; }
+            if (d > 5 * eng.dp()) { ptr.add(x, y); ptr.len += d; }
             if (lassoClosed(ptr)) tryLock();                                        // khép vòng: khóa vùng chọn, tay tiếp tục kéo tới đích
         }
     }
@@ -82,14 +82,14 @@ public final class GestureController {
         if (ptr == null) return;
         Pointer p = ptr;
         ptr = null;
-        if (eng.over) return;
+        if (eng.over()) return;
         Planet h = hit(x, y);
         if (p.mode == GestureMode.UNDECIDED) {
             if (selection != null) dispatch(selection, h, x, y);
-            else if (h != null && Faction.isPlayer(h.owner)) upgradeTap(h);
+            else if (h != null && Faction.isPlayer(h.owner())) upgradeTap(h);
         } else if (p.mode == GestureMode.QUICK) quickSend(p.qsel, h, x, y);
         else if (p.mode == GestureMode.LASSO) finishLasso(p);
-        else if (p.mode == GestureMode.CARRY) { if (hyp(x - p.lockX, y - p.lockY) > 36 * eng.dp) dispatch(selection, h, x, y); }
+        else if (p.mode == GestureMode.CARRY) { if (hyp(x - p.lockX, y - p.lockY) > 36 * eng.dp()) dispatch(selection, h, x, y); }
     }
 
     public void cancelPointer() { ptr = null; }
@@ -102,8 +102,8 @@ public final class GestureController {
     }
 
     private boolean lassoClosed(Pointer p) {
-        if (p.pn < 10 || p.len < 110 * eng.dp || bboxMin(p.px, p.py, p.pn) < 36 * eng.dp) return false;
-        return hyp(p.x - p.px[0], p.y - p.py[0]) < Math.max(26 * eng.dp, p.len * .1f);
+        if (p.pn < 10 || p.len < 110 * eng.dp() || bboxMin(p.px, p.py, p.pn) < 36 * eng.dp()) return false;
+        return hyp(p.x - p.px[0], p.y - p.py[0]) < Math.max(26 * eng.dp(), p.len * .1f);
     }
 
     private void tryLock() {
@@ -118,27 +118,27 @@ public final class GestureController {
     }
 
     private void finishLasso(Pointer p) {
-        if (p.len < 90 * eng.dp || bboxMin(p.px, p.py, p.pn) < 28 * eng.dp) { eng.notice(Msg.LASSO_TOO_SMALL); return; }
+        if (p.len < 90 * eng.dp() || bboxMin(p.px, p.py, p.pn) < 28 * eng.dp()) { eng.notice(Msg.LASSO_TOO_SMALL); return; }
         Selection s = computeSelection(p.px, p.py, p.pn);
         if (s.total() > 0) { selection = s; eng.haptic(Haptic.LIGHT); eng.event(GameEvent.LASSO); }
         else eng.notice(Msg.LASSO_EMPTY);
     }
 
     private void upgradeTap(Planet p) {
-        if (p.level >= eng.maxLvl(p)) { eng.notice(eng.capMsg(p)); return; }
-        int c = Math.min(Engine.upgradeCost(p.level) - p.upgradeProgress, p.rocks);
+        if (p.level() >= eng.maxLvl(p)) { eng.notice(eng.capMsg(p)); return; }
+        int c = Math.min(Engine.upgradeCost(p.level()) - p.upgradeProgress(), p.rocks());
         if (c < 1) { eng.notice(Msg.PLANET_OUT_OF_ROCKS); return; }
         if (eng.launch(p, p, 0, 0, c, true) > 0) eng.event(GameEvent.UPGRADE);
     }
 
     /** Điểm đến của một lệnh điều quân: tâm hành tinh nếu thả lên hành tinh, ngược lại là điểm chạm (kẹp trong khung). */
-    private float targetX(Planet h, float x) { return h != null ? h.x : clamp(x, 14 * eng.dp, eng.W - 14 * eng.dp); }
+    private float targetX(Planet h, float x) { return h != null ? h.x() : clamp(x, 14 * eng.dp(), eng.W() - 14 * eng.dp()); }
 
-    private float targetY(Planet h, float y) { return h != null ? h.y : clamp(y, 70 * eng.dp, eng.H - 70 * eng.dp); }
+    private float targetY(Planet h, float y) { return h != null ? h.y() : clamp(y, 70 * eng.dp(), eng.H() - 70 * eng.dp()); }
 
     /** Loại sự kiện của lệnh điều quân tới h: điểm trống, chuyển quân nội bộ hay tấn công. */
     private static GameEvent moveEvent(Planet h) {
-        return h == null ? GameEvent.POINT : (Faction.isPlayer(h.owner) ? GameEvent.MOVE : GameEvent.ATTACK);
+        return h == null ? GameEvent.POINT : (Faction.isPlayer(h.owner()) ? GameEvent.MOVE : GameEvent.ATTACK);
     }
 
     private void quickSend(ArrayList<Planet> qsel, Planet h, float x, float y) {
@@ -165,11 +165,11 @@ public final class GestureController {
         boolean sent = false, fed = false;
         for (int i = 0; i < sel.planets.size(); i++) {
             Planet p = sel.planets.get(i);
-            if (!Faction.isPlayer(p.owner) || p.rocks <= 0) continue;
-            int c = Math.min(sel.counts[i], p.rocks);
+            if (!Faction.isPlayer(p.owner()) || p.rocks() <= 0) continue;
+            int c = Math.min(sel.counts[i], p.rocks());
             if (c <= 0) continue;
             if (h != null && h == p) {                                           // thả lại chính hành tinh nguồn: nạp nâng cấp
-                if (p.level >= eng.maxLvl(p)) { eng.notice(eng.capMsg(p)); continue; }
+                if (p.level() >= eng.maxLvl(p)) { eng.notice(eng.capMsg(p)); continue; }
                 if (eng.launch(p, p, 0, 0, c, true) > 0) fed = true;
             } else {
                 Notice why = eng.blockReason(p, dx, dy, false);
@@ -189,10 +189,10 @@ public final class GestureController {
         Selection s = new Selection();
         if (n >= 3) {
             for (Planet p : eng.planets()) {
-                if (!Faction.isPlayer(p.owner) || p.rocks <= 0) continue;
+                if (!Faction.isPlayer(p.owner()) || p.rocks() <= 0) continue;
                 int dc = eng.orbitDots(p, dotX, dotY), ic = 0;
                 for (int i = 0; i < dc; i++) if (inPoly(dotX[i], dotY[i], xs, ys, n)) ic++;
-                if (ic > 0) s.addGroup(p, Math.min(p.rocks, ic >= dc ? p.rocks : Math.max(1, Math.round((float) ic / dc * p.rocks))));
+                if (ic > 0) s.addGroup(p, Math.min(p.rocks(), ic >= dc ? p.rocks() : Math.max(1, Math.round((float) ic / dc * p.rocks()))));
             }
             for (Rock r : eng.rocks()) if (!r.dead && Faction.isPlayer(r.owner) && !r.feed && inPoly(r.x, r.y, xs, ys, n)) s.loose.add(r);
         }
@@ -206,10 +206,10 @@ public final class GestureController {
     /** Số viên đá quỹ đạo của p cần sáng lên vì đang được chọn. */
     public int highlightCount(Planet p) {
         Selection s = ptr != null && ptr.mode == GestureMode.LASSO ? ptr.live : selection;
-        if (s == null || p.rocks <= 0) return 0;
+        if (s == null || p.rocks() <= 0) return 0;
         int c = s.countFor(p);
         if (c == 0) return 0;
-        return Math.round(Math.min(c, p.rocks) / (float) p.rocks * Math.min(p.rocks, 60));
+        return Math.round(Math.min(c, p.rocks()) / (float) p.rocks() * Math.min(p.rocks(), 60));
     }
 
 }

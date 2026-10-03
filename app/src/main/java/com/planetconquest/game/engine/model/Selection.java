@@ -28,7 +28,7 @@ public final class Selection {
         int t = 0;
         for (int i = 0; i < planets.size(); i++) {
             Planet p = planets.get(i);
-            if (Faction.isPlayer(p.owner)) t += Math.min(counts[i], p.rocks);
+            if (Faction.isPlayer(p.owner())) t += Math.min(counts[i], p.rocks());
         }
         for (Rock r : loose) if (!r.dead && Faction.isPlayer(r.owner)) t++;
         return t;

@@ -36,7 +36,7 @@ abstract class BaseScreen extends Painter implements Screen {
     @Override public boolean needsLoop() { return false; }
     @Override public MusicTrack musicTrack() { return MusicTrack.MENU; }
     @Override public boolean duckMusic() { return false; }
-    @Override public float animTime() { return eng.clock; }
+    @Override public float animTime() { return eng.clock(); }
     @Override public float toastTop() { return 90 * dp; }
 
     protected final UiButton add(UiButton b) { buttons.add(b); return b; }

@@ -94,15 +94,15 @@ public final class GameSession {
 
     /** Chuyển sự kiện engine vào tiến trình Hướng dẫn. Trả về số bước mới (từ 2) nếu vừa sang bước kế tiếp, ngược lại 0. */
     public int onEvent(GameEvent ev) {
-        if (!eng.lvl.intro || introStep >= INTRO_EV.length || ev != INTRO_EV[introStep]) return 0;
+        if (!eng.level().intro || introStep >= INTRO_EV.length || ev != INTRO_EV[introStep]) return 0;
         introStep++;
         return introStep < INTRO_EV.length ? introStep + 1 : 0;
     }
 
     /** Ghi nhận kết quả vào tiến độ và trả về dữ liệu màn kết thúc. */
     public EndInfo finish(boolean win, EndReason reason) {
-        Level L = eng.lvl;
-        String time = fmtTime(eng.time);
+        Level L = eng.level();
+        String time = fmtTime(eng.time());
         int planets = eng.planets().size();
         EndInfo info;
         if (L.endless) {

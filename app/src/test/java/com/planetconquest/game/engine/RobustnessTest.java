@@ -33,13 +33,13 @@ public class RobustnessTest extends EngineTestBase {
             for (int a = 0; a < 2; a++) {
                 float k = r.nextFloat();
                 Planet p = e.planets.get(r.nextInt(e.planets.size())), q = e.planets.get(r.nextInt(e.planets.size()));
-                if (k < .35f) drag(p, q.x, q.y);
-                else if (k < .55f) tap(p.x, p.y);
+                if (k < .35f) drag(p, q.x(), q.y());
+                else if (k < .55f) tap(p.x(), p.y());
                 else if (k < .8f) {
-                    circle(r.nextFloat() * e.W, e.H * (.2f + r.nextFloat() * .6f), (40 + r.nextFloat() * 90) * e.dp);
-                    float tx = r.nextFloat() * e.W, ty = e.H * (.2f + r.nextFloat() * .6f);
+                    circle(r.nextFloat() * e.W(), e.H() * (.2f + r.nextFloat() * .6f), (40 + r.nextFloat() * 90) * e.dp());
+                    float tx = r.nextFloat() * e.W(), ty = e.H() * (.2f + r.nextFloat() * .6f);
                     e.move(tx, ty); e.up(tx, ty);
-                } else tap(r.nextFloat() * e.W, e.H * (.15f + r.nextFloat() * .7f));
+                } else tap(r.nextFloat() * e.W(), e.H() * (.15f + r.nextFloat() * .7f));
             }
             e.updateLive();
             secs(1);

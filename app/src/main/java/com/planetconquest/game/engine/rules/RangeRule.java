@@ -16,6 +16,6 @@ public final class RangeRule extends LevelRule {
 
     @Override
     public Notice canLaunch(Engine eng, Planet src, float dx, float dy) {
-        return MathUtil.hyp(dx - src.x, dy - src.y) > eng.rangePx() ? new Notice(Msg.OUT_OF_RANGE) : null;
+        return MathUtil.hyp(dx - src.x(), dy - src.y()) > eng.rangePx() ? new Notice(Msg.OUT_OF_RANGE) : null;
     }
 }

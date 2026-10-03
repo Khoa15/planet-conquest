@@ -26,7 +26,7 @@ final class PauseScreen extends BaseScreen {
         buttons.clear();
         if (W() <= 0) return;
         dialog.begin(tx.s(R.string.pause_title), C_INK, tx.levelLabel(host.session().curLevel(), host.session().endlessMap()));
-        Level L = eng.lvl;
+        Level L = eng.level();
         int idx = host.session().curLevel();
         if (L.endless) dialog.section(tx.s(R.string.section_note), tx.levelTip(idx), C_INK);
         else if (!L.intro) dialog.section(tx.s(R.string.section_limit), tx.levelLimit(idx), C_LIMIT);

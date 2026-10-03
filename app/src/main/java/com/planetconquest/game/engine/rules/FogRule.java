@@ -7,10 +7,10 @@ import com.planetconquest.game.engine.model.Planet;
 public final class FogRule extends LevelRule {
     private static final float REVEAL_SECONDS = 3f;
 
-    @Override public boolean hidesInfo(Planet p) { return !Faction.isPlayer(p.owner) && p.reveal <= 0; }
+    @Override public boolean hidesInfo(Planet p) { return !Faction.isPlayer(p.owner()) && p.reveal() <= 0; }
 
     @Override
     public void onHit(Planet target, int attackerOwner) {
-        if (Faction.isPlayer(attackerOwner)) target.reveal = REVEAL_SECONDS;
+        if (Faction.isPlayer(attackerOwner)) target.revealFor(REVEAL_SECONDS);
     }
 }

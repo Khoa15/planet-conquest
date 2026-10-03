@@ -47,7 +47,7 @@ public final class PlayScreen extends BaseScreen {
     @Override
     public void update(float dt) {
         eng.step(dt);                           // có thể kết thúc màn và chuyển sang màn kết thúc
-        if (!eng.over) eng.fx(dt);
+        if (!eng.over()) eng.fx(dt);
     }
 
     @Override
@@ -93,9 +93,9 @@ public final class PlayScreen extends BaseScreen {
         float x = 12 * dp;
         x = chip(c, x, chipY, tx.s(R.string.hud_planets), eng.playerPlanets() + "/" + eng.planets().size(), C_INK) + 6 * dp;
         x = chip(c, x, chipY, tx.s(R.string.hud_rocks), String.valueOf(eng.playerRocks()), C_INK) + 6 * dp;
-        Level L = eng.lvl;
+        Level L = eng.level();
         if (eng.rules().timeLimit() > 0) {
-            int left = Math.max(0, (int) Math.ceil(eng.rules().timeLimit() - eng.time));
+            int left = Math.max(0, (int) Math.ceil(eng.rules().timeLimit() - eng.time()));
             chip(c, x, chipY, tx.s(R.string.hud_time_left), tx.s(R.string.hud_seconds, left), left <= 15 ? C_DANGER : C_INK);
         } else if (L.endless) chip(c, x, chipY, tx.s(R.string.hud_map), String.valueOf(session.endlessMap()), C_INK);
         hudBottom = Math.max(hudBottom, 53 * dp);
