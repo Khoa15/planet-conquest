@@ -44,7 +44,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     static final int S_WELCOME = 0, S_LEVELS = 1, S_BRIEF = 2, S_PLAY = 3, S_PAUSE = 4, S_END = 5;
     static final int B_PLAY = 1, B_TUTORIAL = 2, B_BACK = 3, B_GO = 4, B_PAUSE = 5, B_RESUME = 6, B_RESTART = 7,
-            B_QUIT = 8, B_NEXT = 9, B_AGAIN = 10, B_MENU = 11, B_CANCEL_SEL = 12;
+            B_QUIT = 8, B_NEXT = 9, B_AGAIN = 10, B_MENU = 11, B_CANCEL_SEL = 12, B_SOUND = 13;
 
     static final int C_BG = 0xFF05070F, C_INK = 0xFFE9EDFF, C_MUTED = 0xFF8F99C8, C_PANEL = 0xE00E122A,
             C_LINE = 0x40A0AFFF, C_YOU = 0xFF4FF0B4, C_GOLD = 0xFFFFD166, C_DANGER = 0xFFFF6B7D, C_LIMIT = 0xFFFFB0B0,
@@ -66,6 +66,8 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private final SharedPreferences prefs;
     private final HashSet<Integer> done = new HashSet<Integer>();
     private int best;
+    private final Sfx sfx;
+    private final WelcomeScene scene;
     private boolean introDone;
     private final Random rnd = new Random();
 
@@ -118,6 +120,8 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         super(ctx);
         dp = getResources().getDisplayMetrics().density;
         prefs = ctx.getSharedPreferences("planet_conquest", Context.MODE_PRIVATE);
+        sfx = new Sfx(ctx, prefs);
+        scene = new WelcomeScene(dp);
         loadProgress();
         tfReg = Typeface.create("sans-serif", Typeface.NORMAL);
         tfBold = Typeface.create("sans-serif", Typeface.BOLD);
@@ -153,6 +157,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     // ================= Vòng đời & vòng lặp =================
     public void onHostPause() {
         hostResumed = false;
+        sfx.onHostPause();
         eng.cancelPointer();
         if (screen == S_PLAY) setScreen(S_PAUSE);   // rời app khi đang chơi: tự tạm dừng
         else updateLoop();
@@ -160,6 +165,8 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     public void onHostResume() {
         hostResumed = true;
+        sfx.onHostResume();
+        syncMusic();
         lastNanos = 0;
         updateLoop();
     }
@@ -194,7 +201,19 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         if (pressed != null) { pressed.pressed = false; pressed = null; }
         layoutUi();
         updateLoop();
+        syncMusic();
     }
+
+    /** Chọn nhạc nền theo màn hình hiện tại (cũng gọi lúc mở app, vì màn Welcome không đi qua setScreen). */
+    private void syncMusic() {
+        sfx.music(screen == S_PLAY || screen == S_PAUSE ? Sfx.TRACK_GAME : screen == S_END ? Sfx.TRACK_NONE : Sfx.TRACK_MENU);
+        sfx.duck(screen == S_PAUSE);
+    }
+
+    /** Gọi khi Activity bị hủy. */
+    public void onHostDestroy() { sfx.release(); }
+
+    private String soundLabel() { return sfx.isOn() ? "Âm thanh: Bật" : "Âm thanh: Tắt"; }
 
     /** Nút Back của Android. Trả về false để thoát app ở màn Welcome. */
     public boolean onBack() {
@@ -210,6 +229,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     // ================= Điều hướng =================
     private void onButton(int id) {
         switch (id) {
+            case B_SOUND: sfx.toggle(); layoutUi(); invalidate(); break;
             case B_PLAY: setScreen(S_LEVELS); break;
             case B_TUTORIAL: startLevel(0); break;
             case B_BACK: setScreen(screen == S_LEVELS ? S_WELCOME : S_LEVELS); break;
@@ -277,6 +297,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     @Override
     public void onEvent(int ev) {
+        sfx.onEngineEvent(ev);
         if (!eng.lvl.intro || introStep >= INTRO_EV.length || ev != INTRO_EV[introStep]) return;
         introStep++;
         if (introStep < INTRO_EV.length) toast("Tốt lắm! Sang bước " + (introStep + 1));
@@ -284,6 +305,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     @Override
     public void onFinish(boolean win, String reason) {
+        sfx.play(win ? Sfx.WIN : Sfx.LOSE);
         Level L = eng.lvl;
         endWin = win; endAgain = true; endNext = null;
         String t = fmtTime(eng.time);
@@ -334,6 +356,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     protected void onSizeChanged(int w, int h, int ow, int oh) {
         W = w; H = h;
         eng.setSize(w, h, dp);
+        scene.setSize(w, h);
         buildBg();
         layoutUi();
     }
@@ -348,6 +371,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
             case S_WELCOME:
                 add(new UiButton(B_PLAY, "Chơi", UiButton.PRIMARY, 0)).at(bx, H - 190 * dp, bx + bw, H - 134 * dp);
                 add(new UiButton(B_TUTORIAL, "Hướng dẫn", UiButton.SECONDARY, 0)).at(bx, H - 122 * dp, bx + bw, H - 66 * dp);
+                add(new UiButton(B_SOUND, soundLabel(), UiButton.SMALL, 0)).at(W - 150 * dp, 14 * dp, W - 14 * dp, 48 * dp);
                 break;
             case S_LEVELS:
                 add(new UiButton(B_BACK, null, UiButton.ICON, UiButton.I_BACK)).at(16 * dp, 18 * dp, 60 * dp, 62 * dp);
@@ -389,6 +413,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         else if (!L.intro) dialogSection("Hạn chế", L.limit, C_LIMIT);
         dialogButton(B_RESUME, "Tiếp tục", UiButton.PRIMARY);
         dialogButton(B_RESTART, "Chơi lại", UiButton.SECONDARY);
+        dialogButton(B_SOUND, soundLabel(), UiButton.GHOST);
         dialogButton(B_QUIT, "Thoát ra menu", UiButton.GHOST);
         dialogLayout();
     }
@@ -470,7 +495,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
                     boolean fire = b.pressed;
                     b.pressed = false;
                     invalidate();
-                    if (fire) { performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY); onButton(b.id); }
+                    if (fire) { performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY); sfx.play(Sfx.CLICK); onButton(b.id); }
                     return true;
                 }
                 if (screen == S_PLAY) eng.up(x, y);
@@ -627,30 +652,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     // ================= Màn Welcome =================
     private void drawWelcome(Canvas c) {
-        float t = welcomeT, cx = W / 2, cy = H * .5f, R = Math.min(W, H) * .15f;
-        float ex = W * .2f, ey = H * .32f, er = R * .42f;
-        drawPlanetBody(c, ex, ey, er, 1, 1.3f);
-        drawPlanetBody(c, W * .82f, H * .66f, R * .36f, 2, 2.1f);
-        stroke.setStrokeWidth(2.6f * dp);
-        for (int i = 0; i < 8; i++) {                       // một dòng đá bay từ hành tinh của bạn sang đối thủ
-            float u = (t * .3f + i * .055f) % 1f, mx = (cx + ex) / 2 + 40 * dp, my = (cy + ey) / 2;
-            float x = (1 - u) * (1 - u) * cx + 2 * (1 - u) * u * mx + u * u * ex;
-            float y = (1 - u) * (1 - u) * cy + 2 * (1 - u) * u * my + u * u * ey;
-            fill.setColor(alpha(FL[0], Math.min(1, (1 - u) * 3)));
-            c.drawCircle(x, y, 2.6f * dp, fill);
-        }
-        drawPlanetBody(c, cx, cy, R, 0, .4f);
-        int[] cnt = {12, 18, 24};
-        float[] spd = {.6f, -.4f, .28f};
-        for (int k = 0; k < 3; k++) {
-            float rad = R + (14 + 10 * k) * dp;
-            stroke.setColor(alpha(C_YOU, .12f)); stroke.setStrokeWidth(dp); c.drawCircle(cx, cy, rad, stroke);
-            fill.setColor(alpha(C_YOU, .92f));
-            for (int i = 0; i < cnt[k]; i++) {
-                float a = t * spd[k] + i * TAU / cnt[k];
-                c.drawCircle(cx + cos(a) * rad, cy + sin(a) * rad, 2.1f * dp, fill);
-            }
-        }
+        scene.draw(c, welcomeT);
         float ty = Math.max(80 * dp, H * .13f);
         text(c, "Planet", W / 2, ty, 44 * dp, C_INK, tfTitle, Paint.Align.CENTER);
         text(c, "Conquest", W / 2, ty + 48 * dp, 44 * dp, C_INK, tfTitle, Paint.Align.CENTER);
