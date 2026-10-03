@@ -164,6 +164,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     public void onHostResume() {
         hostResumed = true;
         sfx.onHostResume();
+        syncMusic();
         lastNanos = 0;
         updateLoop();
     }
@@ -198,6 +199,11 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         if (pressed != null) { pressed.pressed = false; pressed = null; }
         layoutUi();
         updateLoop();
+        syncMusic();
+    }
+
+    /** Chọn nhạc nền theo màn hình hiện tại (cũng gọi lúc mở app, vì màn Welcome không đi qua setScreen). */
+    private void syncMusic() {
         sfx.music(screen == S_PLAY || screen == S_PAUSE ? Sfx.TRACK_GAME : screen == S_END ? Sfx.TRACK_NONE : Sfx.TRACK_MENU);
         sfx.duck(screen == S_PAUSE);
     }
