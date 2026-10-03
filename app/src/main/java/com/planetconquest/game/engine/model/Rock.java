@@ -1,4 +1,4 @@
-package com.planetconquest.game.engine;
+package com.planetconquest.game.engine.model;
 
 /** Một viên đá đang bay (tới hành tinh hoặc tới một vị trí trống) hoặc đang chờ ở vị trí trống. */
 public final class Rock extends Body {

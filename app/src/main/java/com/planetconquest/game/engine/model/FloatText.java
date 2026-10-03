@@ -1,4 +1,4 @@
-package com.planetconquest.game.engine;
+package com.planetconquest.game.engine.model;
 
 public final class FloatText {
     public float x, y, life;

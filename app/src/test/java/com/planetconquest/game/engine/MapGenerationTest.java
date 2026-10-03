@@ -1,5 +1,7 @@
 package com.planetconquest.game.engine;
 
+import com.planetconquest.game.engine.model.*;
+
 import org.junit.Test;
 
 import java.util.Random;

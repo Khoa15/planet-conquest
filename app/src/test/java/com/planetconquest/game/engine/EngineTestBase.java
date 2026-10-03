@@ -1,5 +1,7 @@
 package com.planetconquest.game.engine;
 
+import com.planetconquest.game.engine.model.*;
+
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -7,13 +9,13 @@ import java.util.ArrayList;
 /** Tiện ích chung cho các bài kiểm thử engine trên JVM (không cần thiết bị Android). */
 public abstract class EngineTestBase implements Engine.Listener {
     protected final Engine e = new Engine();
-    protected final ArrayList<Integer> events = new ArrayList<Integer>();
+    protected final ArrayList<GameEvent> events = new ArrayList<GameEvent>();
     protected String lastToast = "", finishReason;
     protected Boolean finishWin;
 
     @Override public void onToast(String m) { lastToast = m; }
-    @Override public void onHaptic(int k) { }
-    @Override public void onEvent(int ev) { events.add(ev); }
+    @Override public void onHaptic(Haptic k) { }
+    @Override public void onEvent(GameEvent ev) { events.add(ev); }
     @Override public void onFinish(boolean win, String reason) { finishWin = win; finishReason = reason; }
 
     @Before
@@ -62,7 +64,7 @@ public abstract class EngineTestBase implements Engine.Listener {
     /** Bắn một viên đá của người chơi thẳng vào hành tinh đích. */
     protected void shoot(Planet target) {
         Rock k = new Rock();
-        k.x = target.x + target.base; k.y = target.y; k.s = 600; k.o = 0; k.t = target; k.rad = e.RR;
+        k.x = target.x + target.base; k.y = target.y; k.s = 600; k.owner = 0; k.t = target; k.rad = e.rockRadius;
         e.rocks.add(k);
     }
 }

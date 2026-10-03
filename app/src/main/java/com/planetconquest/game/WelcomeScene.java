@@ -10,13 +10,16 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.SweepGradient;
 
-import com.planetconquest.game.engine.Engine;
+import com.planetconquest.game.engine.model.Faction;
+import com.planetconquest.game.ui.Palette;
+import com.planetconquest.game.engine.util.ColorUtil;
+import com.planetconquest.game.engine.util.MathUtil;
 
 import java.util.Random;
 
-import static com.planetconquest.game.GameView.alpha;
-import static com.planetconquest.game.GameView.cos;
-import static com.planetconquest.game.GameView.sin;
+import static com.planetconquest.game.engine.util.ColorUtil.alpha;
+import static com.planetconquest.game.engine.util.MathUtil.cos;
+import static com.planetconquest.game.engine.util.MathUtil.sin;
 
 /**
  * Nền động của màn Welcome: tinh vân trôi, hố đen có đĩa bồi tụ xé nát một hành tinh nhỏ, hành tinh xanh
@@ -61,7 +64,7 @@ final class WelcomeScene {
     private final Path[] rockShape = new Path[8];
     private final Matrix mtx = new Matrix();
     private final RectF oval = new RectF();
-    private final int[] FC = Engine.FACTION_COLORS, FL = Engine.FACTION_LIGHT;
+    private final int[] FC = Faction.COLORS, FL = Faction.LIGHT;
 
     private final Shader[] glowS = new Shader[PL.length], bodyS = new Shader[PL.length], nebS = new Shader[NEB.length];
     private Shader sandS, heatS, haloS, shadowS, diskS, blurS, topS, botS;
@@ -94,7 +97,7 @@ final class WelcomeScene {
         for (int k = 0; k < rockShape.length; k++) {
             Path p = new Path();
             for (int i = 0; i < 8; i++) {
-                float a = i / 8f * Engine.TAU, rad = .72f + r.nextFloat() * .38f;
+                float a = i / 8f * MathUtil.TAU, rad = .72f + r.nextFloat() * .38f;
                 if (i == 0) p.moveTo(cos(a) * rad, sin(a) * rad); else p.lineTo(cos(a) * rad, sin(a) * rad);
             }
             p.close();
@@ -111,7 +114,7 @@ final class WelcomeScene {
         }
         for (int i = 0; i < DISK_P; i++) {
             diskR[i] = 1.3f + r.nextFloat() * 1.7f;
-            diskA[i] = r.nextFloat() * Engine.TAU;
+            diskA[i] = r.nextFloat() * MathUtil.TAU;
             diskSz[i] = .8f + r.nextFloat() * .9f;
         }
         for (int i = 0; i < ARCS; i++) {
@@ -146,8 +149,8 @@ final class WelcomeScene {
             float r = p[2] * U;
             int o = (int) p[3], fog = 0xFF0A0D20;
             float haze = Math.max(0, 1 - p[4]) * .6f;
-            int col = Engine.mixColor(FC[o], fog, haze), lt = Engine.mixColor(FL[o], fog, haze);
-            int dk = Engine.mixColor(col, 0xFF000000, .62f);
+            int col = ColorUtil.mix(FC[o], fog, haze), lt = ColorUtil.mix(FL[o], fog, haze);
+            int dk = ColorUtil.mix(col, 0xFF000000, .62f);
             glowS[i] = new RadialGradient(0, 0, r * 2.2f, new int[]{alpha(col, .38f), alpha(col, .3f), alpha(col, 0)},
                     new float[]{0, .45f, 1}, Shader.TileMode.CLAMP);
             bodyS[i] = new RadialGradient(-r * .35f, -r * .4f, r * 1.45f, new int[]{lt, col, dk}, new float[]{0, .5f, 1}, Shader.TileMode.CLAMP);
@@ -164,8 +167,8 @@ final class WelcomeScene {
         shadowS = new RadialGradient(0, 0, rh * 1.7f, new int[]{0xFF000000, 0xFF000000, 0}, new float[]{0, .58f, 1}, Shader.TileMode.CLAMP);
         diskS = new SweepGradient(0, 0, new int[]{0xFFFFF3D6, 0xFFFFC46B, 0xFFFF8A3D, 0xFFE0602A, 0xFFFF9A48, 0xFFFFD58A, 0xFFFFF3D6}, null);
         blurS = new RadialGradient(0, 0, 100, new int[]{0xFF6B5A4D, 0xFF4E4239, 0x004E4239}, new float[]{0, .5f, 1}, Shader.TileMode.CLAMP);
-        topS = new LinearGradient(0, 0, 0, H * .26f, alpha(GameView.C_BG, .6f), alpha(GameView.C_BG, 0), Shader.TileMode.CLAMP);
-        botS = new LinearGradient(0, H * .66f, 0, H, alpha(GameView.C_BG, 0), alpha(GameView.C_BG, .8f), Shader.TileMode.CLAMP);
+        topS = new LinearGradient(0, 0, 0, H * .26f, alpha(Palette.C_BG, .6f), alpha(Palette.C_BG, 0), Shader.TileMode.CLAMP);
+        botS = new LinearGradient(0, H * .66f, 0, H, alpha(Palette.C_BG, 0), alpha(Palette.C_BG, .8f), Shader.TileMode.CLAMP);
         float x0 = -.15f * W, y0 = .64f * H, x1 = 1.15f * W, y1 = .40f * H;
         bLen = (float) Math.hypot(x1 - x0, y1 - y0);
         b0x = x0; b0y = y0; bdx = (x1 - x0) / bLen; bdy = (y1 - y0) / bLen;
@@ -173,7 +176,7 @@ final class WelcomeScene {
 
     void draw(Canvas c, float t) {
         if (W <= 0 || haloS == null) return;
-        float ph = Engine.TAU * t / CAM_PERIOD;
+        float ph = MathUtil.TAU * t / CAM_PERIOD;
         zoom = .03f * (.5f - .5f * cos(ph));
         swayX = sin(ph) * 5 * dp;
         swayY = (cos(ph) - 1) * 3 * dp;
@@ -273,10 +276,10 @@ final class WelcomeScene {
                 for (int d = 0; d < RING_CNT[ring]; d++) {
                     float sc = dotScale(ring, d, lt);
                     if (sc <= 0) continue;                  // đá này đã rời vòng, đang bay hoặc chưa mọc lại
-                    float a = t * RING_SPD[ring] + d * Engine.TAU / RING_CNT[ring], dx = cos(a) * rad, dy = sin(a) * rad;
+                    float a = t * RING_SPD[ring] + d * MathUtil.TAU / RING_CNT[ring], dx = cos(a) * rad, dy = sin(a) * rad;
                     float hot = Math.max(0, sc - 1) / .6f;  // tụ sáng ngay trước khi phóng
                     fill.setColor(alpha(FC[0], .18f + .25f * hot)); c.drawCircle(dx, dy, 4.5f * dp * sc, fill);
-                    fill.setColor(alpha(Engine.mixColor(FL[0], 0xFFFFFFFF, hot), .95f)); c.drawCircle(dx, dy, 2.1f * dp * sc, fill);
+                    fill.setColor(alpha(ColorUtil.mix(FL[0], 0xFFFFFFFF, hot), .95f)); c.drawCircle(dx, dy, 2.1f * dp * sc, fill);
                 }
             }
         } else if (p[6] > 0) {
@@ -284,7 +287,7 @@ final class WelcomeScene {
             float rad = r + 9 * dp;
             fill.setColor(alpha(FC[o], .9f));
             for (int d = 0; d < n; d++) {
-                float a = t * (i % 2 == 0 ? .5f : -.5f) + d * Engine.TAU / n;
+                float a = t * (i % 2 == 0 ? .5f : -.5f) + d * MathUtil.TAU / n;
                 c.drawCircle(cos(a) * rad, sin(a) * rad, 1.8f * dp, fill);
             }
         }
@@ -300,7 +303,7 @@ final class WelcomeScene {
         for (int i = 0; i < LAUNCH_N; i++) {
             int k = i % 3, n = RING_CNT[k];
             float li = cs + LAUNCH_AT + i * LAUNCH_GAP;
-            int base = Math.round((tg - li * RING_SPD[k]) / (Engine.TAU / n));
+            int base = Math.round((tg - li * RING_SPD[k]) / (MathUtil.TAU / n));
             lSlot[i] = ((base + SLOT_OFF[i / 3]) % n + n) % n;
         }
     }
@@ -330,7 +333,7 @@ final class WelcomeScene {
             float li = LAUNCH_AT + i * LAUNCH_GAP, u = (lt - li) / FLIGHT;
             if (u < 0 || u > 1) continue;
             int k = i % 3;
-            float rad = ringRad(k), an = (cs + li) * RING_SPD[k] + lSlot[i] * Engine.TAU / RING_CNT[k], sg = Math.signum(RING_SPD[k]);
+            float rad = ringRad(k), an = (cs + li) * RING_SPD[k] + lSlot[i] * MathUtil.TAU / RING_CNT[k], sg = Math.signum(RING_SPD[k]);
             float p0x = ax + cos(an) * rad, p0y = ay + sin(an) * rad;
             float vx = wex - p0x, vy = wey - p0y, dd = (float) Math.hypot(vx, vy);
             float p1x = p0x - sin(an) * sg * dd * .22f + cos(an) * dd * .1f, p1y = p0y + cos(an) * sg * dd * .22f + sin(an) * dd * .1f;
@@ -360,7 +363,7 @@ final class WelcomeScene {
             c.drawCircle(tx, ty, tr * (1 + age * .6f), stroke);
             fill.setColor(alpha(FL[0], f));
             for (int j = 0; j < 5; j++) {
-                float ang = i * 1.3f + j * Engine.TAU / 5;
+                float ang = i * 1.3f + j * MathUtil.TAU / 5;
                 c.drawCircle(ex + cos(ang) * age * 40 * dp, ey + sin(ang) * age * 40 * dp, 1.4f * dp, fill);
             }
         }
@@ -468,7 +471,7 @@ final class WelcomeScene {
             spiral(u, th0, rs, sweep);
             float off = jit[j0 + i] * 16 * dp * (1 - u), nx = -(spY - py), ny = spX - px, nl = (float) Math.hypot(nx, ny);
             if (nl > 0) { nx = nx / nl * off; ny = ny / nl * off; }
-            stroke.setColor(alpha(Engine.mixColor(FC[SAND], 0xFFFFA04A, u), fade));
+            stroke.setColor(alpha(ColorUtil.mix(FC[SAND], 0xFFFFA04A, u), fade));
             stroke.setStrokeWidth(size * (1 - .6f * u) * dp);
             c.drawLine(px + nx, py + ny, spX + nx, spY + ny, stroke);
         }
@@ -499,7 +502,7 @@ final class WelcomeScene {
             tornCracks.lineTo(x - L, y + (crackB[i] * .2f + y / R * .5f) * L);
         }
         sandS = new RadialGradient(R * .35f, -R * .3f, R * 1.6f,
-                new int[]{FL[SAND], Engine.mixColor(FC[SAND], 0xFF8A5A40, .4f), Engine.mixColor(FC[SAND], 0xFF000000, .72f)},
+                new int[]{FL[SAND], ColorUtil.mix(FC[SAND], 0xFF8A5A40, .4f), ColorUtil.mix(FC[SAND], 0xFF000000, .72f)},
                 new float[]{0, .45f, 1}, Shader.TileMode.CLAMP);
         heatS = new RadialGradient(0, 0, R * 1.6f, new int[]{alpha(0xFFFF9A40, .55f), alpha(0xFFFF6A20, .18f), 0},
                 new float[]{0, .45f, 1}, Shader.TileMode.CLAMP);
@@ -615,7 +618,7 @@ final class WelcomeScene {
                 c.translate(x, y);
                 c.rotate(jt * 720 + t * (40 + jt * 80) * (1 + u * 3));
                 c.scale(size, size);
-                fill.setColor(alpha(Engine.mixColor(0xFF9C8E7E, 0xFFFF9A48, heat), fade));
+                fill.setColor(alpha(ColorUtil.mix(0xFF9C8E7E, 0xFFFF9A48, heat), fade));
                 c.drawPath(rock, fill);
                 stroke.setColor(alpha(0xFFFFB070, (.25f + .6f * heat) * fade));
                 stroke.setStrokeWidth(dp / size);
@@ -627,7 +630,7 @@ final class WelcomeScene {
                 float qx = spX + nx, qy = spY + ny;
                 stroke.setColor(alpha(0xFFFF8A3A, .25f * fade)); stroke.setStrokeWidth(3.5f * dp);
                 c.drawLine(qx, qy, x, y, stroke);
-                stroke.setColor(alpha(Engine.mixColor(0xFFFF9A48, 0xFFFFF4D0, k), fade)); stroke.setStrokeWidth((2.2f - 1.2f * k) * dp);
+                stroke.setColor(alpha(ColorUtil.mix(0xFFFF9A48, 0xFFFFF4D0, k), fade)); stroke.setStrokeWidth((2.2f - 1.2f * k) * dp);
                 c.drawLine(qx, qy, x, y, stroke);
             }
         }
@@ -644,7 +647,7 @@ final class WelcomeScene {
             c.translate(x, y);
             c.rotate(beltRot[i] + t * beltSpin[i]);
             c.scale(sz, sz);
-            fill.setColor(alpha(Engine.mixColor(0xFF7B7168, 0xFF8E7B66, beltCol[i]), a));
+            fill.setColor(alpha(ColorUtil.mix(0xFF7B7168, 0xFF8E7B66, beltCol[i]), a));
             Path rock = rockShape[i % rockShape.length];
             c.drawPath(rock, fill);
             c.translate(.22f, .22f);

@@ -1,5 +1,8 @@
 package com.planetconquest.game.engine;
 
+import com.planetconquest.game.engine.model.*;
+import com.planetconquest.game.engine.util.MathUtil;
+
 /** Cấu hình một màn chơi. Mỗi màn chiến dịch bật đúng một hạn chế. */
 public final class Level {
     public String name = "", limit = "", tip = "";

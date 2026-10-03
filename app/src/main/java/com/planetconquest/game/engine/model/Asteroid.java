@@ -1,4 +1,4 @@
-package com.planetconquest.game.engine;
+package com.planetconquest.game.engine.model;
 
 /** Thiên thạch trôi nổi trung lập. */
 public final class Asteroid extends Body {

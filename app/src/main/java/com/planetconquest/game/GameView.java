@@ -19,18 +19,34 @@ import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.planetconquest.game.engine.Asteroid;
+import com.planetconquest.game.engine.model.Asteroid;
+import com.planetconquest.game.engine.model.Faction;
+import com.planetconquest.game.audio.MusicTrack;
+import com.planetconquest.game.data.ProgressStore;
+import com.planetconquest.game.audio.Sfx;
+import com.planetconquest.game.audio.Sound;
 import com.planetconquest.game.engine.Engine;
-import com.planetconquest.game.engine.FloatText;
+import com.planetconquest.game.engine.GameEvent;
+import com.planetconquest.game.engine.GestureMode;
+import com.planetconquest.game.engine.Haptic;
+import com.planetconquest.game.engine.model.FloatText;
 import com.planetconquest.game.engine.Level;
 import com.planetconquest.game.engine.Levels;
-import com.planetconquest.game.engine.Particle;
-import com.planetconquest.game.engine.Planet;
-import com.planetconquest.game.engine.Rock;
-import com.planetconquest.game.engine.Selection;
+import com.planetconquest.game.engine.model.Particle;
+import com.planetconquest.game.engine.model.Planet;
+import com.planetconquest.game.engine.model.Rock;
+import com.planetconquest.game.engine.model.Selection;
+
+import com.planetconquest.game.engine.util.ColorUtil;
+import com.planetconquest.game.ui.UiButton;
+
+import static com.planetconquest.game.engine.util.ColorUtil.alpha;
+import static com.planetconquest.game.engine.util.MathUtil.TAU;
+import static com.planetconquest.game.engine.util.MathUtil.cos;
+import static com.planetconquest.game.engine.util.MathUtil.sin;
+import static com.planetconquest.game.ui.Palette.*;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Random;
 
 /**
@@ -46,11 +62,6 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     static final int B_PLAY = 1, B_TUTORIAL = 2, B_BACK = 3, B_GO = 4, B_PAUSE = 5, B_RESUME = 6, B_RESTART = 7,
             B_QUIT = 8, B_NEXT = 9, B_AGAIN = 10, B_MENU = 11, B_CANCEL_SEL = 12, B_SOUND = 13;
 
-    static final int C_BG = 0xFF05070F, C_INK = 0xFFE9EDFF, C_MUTED = 0xFF8F99C8, C_PANEL = 0xE00E122A,
-            C_LINE = 0x40A0AFFF, C_YOU = 0xFF4FF0B4, C_GOLD = 0xFFFFD166, C_DANGER = 0xFFFF6B7D, C_LIMIT = 0xFFFFB0B0,
-            C_FAR = 0xFFFF9B6B;
-    static final float TAU = Engine.TAU;
-
     static final String[] INTRO_STEPS = {
             "Chạm giữ hành tinh xanh của bạn, kéo sang hành tinh đỏ rồi thả tay. Một nửa số đá sẽ bay đi tấn công.",
             "Khoanh một vòng quanh những viên đá đang quay quanh hành tinh của bạn để chọn chúng.",
@@ -58,17 +69,15 @@ public final class GameView extends View implements Choreographer.FrameCallback,
             "Chạm vào hành tinh của bạn để nâng cấp: sinh đá nhanh hơn, chứa nhiều hơn và được thêm giáp.",
             "Máu = số đá + giáp. Tiếp tục gửi đá vào hành tinh đỏ cho tới khi chiếm được nó."
     };
-    static final int[] INTRO_EV = {Engine.EV_ATTACK, Engine.EV_LASSO, Engine.EV_POINT, Engine.EV_UPGRADE, Engine.EV_CAPTURE};
+    static final GameEvent[] INTRO_EV = {GameEvent.ATTACK, GameEvent.LASSO, GameEvent.POINT, GameEvent.UPGRADE, GameEvent.CAPTURE};
 
     private final Engine eng = new Engine();
     private final float dp;
     private float W, H;
     private final SharedPreferences prefs;
-    private final HashSet<Integer> done = new HashSet<Integer>();
-    private int best;
+    private final ProgressStore progress;
     private final Sfx sfx;
     private final WelcomeScene scene;
-    private boolean introDone;
     private final Random rnd = new Random();
 
     private int screen = S_WELCOME;
@@ -101,8 +110,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private Bitmap bg;
     private float[] tw = new float[0];
     private final float[] dotX = new float[64], dotY = new float[64], rings = new float[16];
-    private final int[] FC = Engine.FACTION_COLORS, FL = Engine.FACTION_LIGHT;
-    private final int[] FD;
+    private final int[] FC = Faction.COLORS, FL = Faction.LIGHT, FD = Faction.DARK;
     private final Typeface tfReg, tfBold, tfTitle;
     private final ArrayList<Planet> tmpPlanets = new ArrayList<Planet>();
 
@@ -122,7 +130,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         prefs = ctx.getSharedPreferences("planet_conquest", Context.MODE_PRIVATE);
         sfx = new Sfx(ctx, prefs);
         scene = new WelcomeScene(dp);
-        loadProgress();
+        progress = new ProgressStore(prefs);
         tfReg = Typeface.create("sans-serif", Typeface.NORMAL);
         tfBold = Typeface.create("sans-serif", Typeface.BOLD);
         tfTitle = Typeface.create("sans-serif-black", Typeface.NORMAL);
@@ -130,28 +138,9 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeCap(Paint.Cap.ROUND);
         stroke.setStrokeJoin(Paint.Join.ROUND);
-        FD = new int[FC.length];
-        for (int i = 0; i < FC.length; i++) FD[i] = Engine.mixColor(FC[i], 0xFF000000, .62f);
         eng.setListener(this);
         setHapticFeedbackEnabled(true);
         setKeepScreenOn(true);
-    }
-
-    // ================= Lưu tiến độ =================
-    private void loadProgress() {
-        done.clear();
-        for (String p : prefs.getString("done", "").split(",")) {
-            if (p.length() == 0) continue;
-            try { done.add(Integer.parseInt(p)); } catch (NumberFormatException ignored) { }
-        }
-        best = prefs.getInt("best", 0);
-        introDone = prefs.getBoolean("introDone", false);
-    }
-
-    private void saveProgress() {
-        StringBuilder sb = new StringBuilder();
-        for (Integer i : done) { if (sb.length() > 0) sb.append(','); sb.append(i); }
-        prefs.edit().putString("done", sb.toString()).putInt("best", best).putBoolean("introDone", introDone).apply();
     }
 
     // ================= Vòng đời & vòng lặp =================
@@ -206,7 +195,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     /** Chọn nhạc nền theo màn hình hiện tại (cũng gọi lúc mở app, vì màn Welcome không đi qua setScreen). */
     private void syncMusic() {
-        sfx.music(screen == S_PLAY || screen == S_PAUSE ? Sfx.TRACK_GAME : screen == S_END ? Sfx.TRACK_NONE : Sfx.TRACK_MENU);
+        sfx.music(screen == S_PLAY || screen == S_PAUSE ? MusicTrack.GAME : screen == S_END ? MusicTrack.NONE : MusicTrack.MENU);
         sfx.duck(screen == S_PAUSE);
     }
 
@@ -234,7 +223,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
             case B_TUTORIAL: startLevel(0); break;
             case B_BACK: setScreen(screen == S_LEVELS ? S_WELCOME : S_LEVELS); break;
             case B_GO:
-                if (briefLevel < 0) { endlessMap = 1; endlessCleared = 0; startEndless(); }
+                if (briefLevel < 0) newEndlessRun();
                 else startLevel(briefLevel);
                 break;
             case B_PAUSE: eng.cancelPointer(); setScreen(S_PAUSE); break;
@@ -250,7 +239,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
                 else openBrief(-1);
                 break;
             case B_AGAIN:
-                if (curLevel < 0) { endlessMap = 1; endlessCleared = 0; startEndless(); }
+                if (curLevel < 0) newEndlessRun();
                 else startLevel(curLevel);
                 break;
             case B_CANCEL_SEL: eng.cancelSelection(); break;
@@ -261,6 +250,12 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         curLevel = idx; introStep = 0;
         eng.start(Levels.ALL[idx]);
         setScreen(S_PLAY);
+    }
+
+    /** Bắt đầu một hành trình Endless mới từ bản đồ 1. */
+    private void newEndlessRun() {
+        endlessMap = 1; endlessCleared = 0;
+        startEndless();
     }
 
     private void startEndless() {
@@ -291,12 +286,12 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     @Override public void onToast(String m) { toast(m); }
 
     @Override
-    public void onHaptic(int kind) {
-        performHapticFeedback(kind == Engine.H_HEAVY ? HapticFeedbackConstants.LONG_PRESS : HapticFeedbackConstants.VIRTUAL_KEY);
+    public void onHaptic(Haptic kind) {
+        performHapticFeedback(kind == Haptic.HEAVY ? HapticFeedbackConstants.LONG_PRESS : HapticFeedbackConstants.VIRTUAL_KEY);
     }
 
     @Override
-    public void onEvent(int ev) {
+    public void onEvent(GameEvent ev) {
         sfx.onEngineEvent(ev);
         if (!eng.lvl.intro || introStep >= INTRO_EV.length || ev != INTRO_EV[introStep]) return;
         introStep++;
@@ -305,37 +300,37 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     @Override
     public void onFinish(boolean win, String reason) {
-        sfx.play(win ? Sfx.WIN : Sfx.LOSE);
+        sfx.play(win ? Sound.WIN : Sound.LOSE);
         Level L = eng.lvl;
         endWin = win; endAgain = true; endNext = null;
         String t = fmtTime(eng.time);
         if (L.endless) {
             if (win) {
                 endlessCleared = endlessMap;
-                if (endlessCleared > best) best = endlessCleared;
+                progress.recordEndless(endlessCleared);
                 endTitle = "Qua bản đồ " + endlessMap;
-                endText = "Đã chiếm " + eng.planets.size() + " hành tinh sau " + t + ". Bản đồ tiếp theo ngẫu nhiên và khó hơn một chút. Kỷ lục: " + best + " bản đồ.";
+                endText = "Đã chiếm " + eng.planets.size() + " hành tinh sau " + t + ". Bản đồ tiếp theo ngẫu nhiên và khó hơn một chút. Kỷ lục: " + progress.bestEndless() + " bản đồ.";
                 endNext = "Bản đồ tiếp theo"; endAgain = false;
             } else {
                 endTitle = "Kết thúc hành trình";
-                endText = reason + " Bạn đã vượt " + endlessCleared + " bản đồ. Kỷ lục: " + best + ".";
+                endText = reason + " Bạn đã vượt " + endlessCleared + " bản đồ. Kỷ lục: " + progress.bestEndless() + ".";
             }
         } else if (L.intro) {
             if (win) {
-                introDone = true;
+                progress.markIntroDone();
                 endTitle = "Hoàn thành hướng dẫn";
                 endText = "Bạn đã nắm đủ cách chơi. Mỗi màn tiếp theo có một hạn chế riêng để vượt qua.";
                 endNext = "Vào màn 1";
             } else { endTitle = "Thử lại nhé"; endText = reason; }
         } else if (win) {
-            done.add(curLevel);
+            progress.markLevelDone(curLevel);
             endTitle = "Chiến thắng";
             endText = "Đã chiếm " + eng.planets.size() + " hành tinh sau " + t + ", dù hạn chế: " + L.limit.toLowerCase();
             endNext = curLevel < Levels.CAMPAIGN_LAST ? "Màn tiếp theo" : "Thử Endless";
         } else {
             endTitle = "Thất bại"; endText = reason;
         }
-        saveProgress();
+        progress.save();
         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
         setScreen(S_END);
     }
@@ -369,19 +364,19 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         float bw = Math.min(W - 48 * dp, 420 * dp), bx = (W - bw) / 2;
         switch (screen) {
             case S_WELCOME:
-                add(new UiButton(B_PLAY, "Chơi", UiButton.PRIMARY, 0)).at(bx, H - 190 * dp, bx + bw, H - 134 * dp);
-                add(new UiButton(B_TUTORIAL, "Hướng dẫn", UiButton.SECONDARY, 0)).at(bx, H - 122 * dp, bx + bw, H - 66 * dp);
-                add(new UiButton(B_SOUND, soundLabel(), UiButton.SMALL, 0)).at(W - 150 * dp, 14 * dp, W - 14 * dp, 48 * dp);
+                add(new UiButton(B_PLAY, "Chơi", UiButton.Style.PRIMARY, UiButton.Icon.NONE)).at(bx, H - 190 * dp, bx + bw, H - 134 * dp);
+                add(new UiButton(B_TUTORIAL, "Hướng dẫn", UiButton.Style.SECONDARY, UiButton.Icon.NONE)).at(bx, H - 122 * dp, bx + bw, H - 66 * dp);
+                add(new UiButton(B_SOUND, soundLabel(), UiButton.Style.SMALL, UiButton.Icon.NONE)).at(W - 150 * dp, 14 * dp, W - 14 * dp, 48 * dp);
                 break;
             case S_LEVELS:
-                add(new UiButton(B_BACK, null, UiButton.ICON, UiButton.I_BACK)).at(16 * dp, 18 * dp, 60 * dp, 62 * dp);
+                add(new UiButton(B_BACK, null, UiButton.Style.ICON, UiButton.Icon.BACK)).at(16 * dp, 18 * dp, 60 * dp, 62 * dp);
                 scrollMax = Math.max(0, cardTop() + (Levels.ALL.length + 1) * (cardH() + 10 * dp) + 24 * dp - H);
                 scroll = Math.max(0, Math.min(scroll, scrollMax));
                 break;
             case S_BRIEF: buildBrief(); break;
             case S_PLAY:
-                add(new UiButton(B_PAUSE, null, UiButton.ICON, UiButton.I_PAUSE)).at(W - 56 * dp, 9 * dp, W - 12 * dp, 53 * dp);
-                cancelSelBtn = add(new UiButton(B_CANCEL_SEL, "Hủy", UiButton.SMALL, 0));
+                add(new UiButton(B_PAUSE, null, UiButton.Style.ICON, UiButton.Icon.PAUSE)).at(W - 56 * dp, 9 * dp, W - 12 * dp, 53 * dp);
+                cancelSelBtn = add(new UiButton(B_CANCEL_SEL, "Hủy", UiButton.Style.SMALL, UiButton.Icon.NONE));
                 cancelSelBtn.visible = false;
                 break;
             case S_PAUSE: buildPause(); break;
@@ -401,8 +396,8 @@ public final class GameView extends View implements Choreographer.FrameCallback,
             dialogSection("Hạn chế", L.limit, C_LIMIT);
             dialogSection("Cách vượt qua", L.tip, C_INK);
         }
-        dialogButton(B_GO, "Bắt đầu", UiButton.PRIMARY);
-        dialogButton(B_BACK, "Quay lại", UiButton.GHOST);
+        dialogButton(B_GO, "Bắt đầu", UiButton.Style.PRIMARY);
+        dialogButton(B_BACK, "Quay lại", UiButton.Style.GHOST);
         dialogLayout();
     }
 
@@ -411,18 +406,18 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         Level L = eng.lvl;
         if (L.endless) dialogSection("Lưu ý", L.tip, C_INK);
         else if (!L.intro) dialogSection("Hạn chế", L.limit, C_LIMIT);
-        dialogButton(B_RESUME, "Tiếp tục", UiButton.PRIMARY);
-        dialogButton(B_RESTART, "Chơi lại", UiButton.SECONDARY);
-        dialogButton(B_SOUND, soundLabel(), UiButton.GHOST);
-        dialogButton(B_QUIT, "Thoát ra menu", UiButton.GHOST);
+        dialogButton(B_RESUME, "Tiếp tục", UiButton.Style.PRIMARY);
+        dialogButton(B_RESTART, "Chơi lại", UiButton.Style.SECONDARY);
+        dialogButton(B_SOUND, soundLabel(), UiButton.Style.GHOST);
+        dialogButton(B_QUIT, "Thoát ra menu", UiButton.Style.GHOST);
         dialogLayout();
     }
 
     private void buildEnd() {
         dialogBegin(endTitle, endWin ? C_YOU : C_DANGER, endText);
-        if (endNext != null) dialogButton(B_NEXT, endNext, UiButton.PRIMARY);
-        if (endAgain) dialogButton(B_AGAIN, "Chơi lại", endNext == null ? UiButton.PRIMARY : UiButton.SECONDARY);
-        dialogButton(B_MENU, "Chọn màn", UiButton.GHOST);
+        if (endNext != null) dialogButton(B_NEXT, endNext, UiButton.Style.PRIMARY);
+        if (endAgain) dialogButton(B_AGAIN, "Chơi lại", endNext == null ? UiButton.Style.PRIMARY : UiButton.Style.SECONDARY);
+        dialogButton(B_MENU, "Chọn màn", UiButton.Style.GHOST);
         dialogLayout();
     }
 
@@ -433,7 +428,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     private void dialogSection(String label, String text, int color) { dLabels.add(label); dTexts.add(text); dColors.add(color); }
 
-    private void dialogButton(int id, String label, int style) { dBtns.add(add(new UiButton(id, label, style, 0))); }
+    private void dialogButton(int id, String label, UiButton.Style style) { dBtns.add(add(new UiButton(id, label, style, UiButton.Icon.NONE))); }
 
     private void dialogLayout() {
         float cw = Math.min(W - 32 * dp, 420 * dp), pad = 22 * dp, inner = cw - 2 * pad;
@@ -459,7 +454,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private UiButton findButton(float x, float y) {
         for (int i = buttons.size() - 1; i >= 0; i--) {
             UiButton b = buttons.get(i);
-            if (b.contains(x, y, b.style == UiButton.ICON ? 8 * dp : 0)) return b;
+            if (b.contains(x, y, b.style == UiButton.Style.ICON ? 8 * dp : 0)) return b;
         }
         return null;
     }
@@ -495,7 +490,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
                     boolean fire = b.pressed;
                     b.pressed = false;
                     invalidate();
-                    if (fire) { performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY); sfx.play(Sfx.CLICK); onButton(b.id); }
+                    if (fire) { performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY); sfx.play(Sound.CLICK); onButton(b.id); }
                     return true;
                 }
                 if (screen == S_PLAY) eng.up(x, y);
@@ -514,10 +509,6 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     }
 
     // ================= Vẽ: tiện ích =================
-    static int alpha(int c, float a) { return (c & 0x00FFFFFF) | (((int) (Math.max(0, Math.min(1, a)) * 255)) << 24); }
-    static float sin(float a) { return (float) Math.sin(a); }
-    static float cos(float a) { return (float) Math.cos(a); }
-
     private void text(Canvas c, String s, float x, float y, float size, int color, Typeface tf, Paint.Align al) {
         txt.setTextSize(size); txt.setColor(color); txt.setTypeface(tf); txt.setTextAlign(al);
         txt.getFontMetrics(fm);
@@ -620,30 +611,30 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private void drawButton(Canvas c, UiButton b) {
         if (!b.visible) return;
         RectF r = b.r;
-        float rad = b.style == UiButton.ICON ? 14 * dp : Math.min(r.height() / 2, 16 * dp);
+        float rad = b.style == UiButton.Style.ICON ? 14 * dp : Math.min(r.height() / 2, 16 * dp);
         c.save();
         if (b.pressed) c.scale(.96f, .96f, r.centerX(), r.centerY());
         int fillC, textC, strokeC = 0;
         switch (b.style) {
-            case UiButton.PRIMARY: fillC = b.pressed ? Engine.mixColor(C_YOU, 0xFF000000, .18f) : C_YOU; textC = 0xFF04170F; break;
-            case UiButton.SECONDARY: fillC = b.pressed ? 0x2EFFFFFF : 0x14FFFFFF; textC = C_INK; strokeC = 0x55A0AFFF; break;
-            case UiButton.GHOST: fillC = b.pressed ? 0x1AFFFFFF : 0; textC = C_MUTED; break;
-            case UiButton.SMALL: fillC = b.pressed ? Engine.mixColor(C_GOLD, 0xFF000000, .18f) : C_GOLD; textC = 0xFF241A00; break;
+            case PRIMARY: fillC = b.pressed ? ColorUtil.mix(C_YOU, 0xFF000000, .18f) : C_YOU; textC = 0xFF04170F; break;
+            case SECONDARY: fillC = b.pressed ? 0x2EFFFFFF : 0x14FFFFFF; textC = C_INK; strokeC = 0x55A0AFFF; break;
+            case GHOST: fillC = b.pressed ? 0x1AFFFFFF : 0; textC = C_MUTED; break;
+            case SMALL: fillC = b.pressed ? ColorUtil.mix(C_GOLD, 0xFF000000, .18f) : C_GOLD; textC = 0xFF241A00; break;
             default: fillC = b.pressed ? 0xF01E2650 : C_PANEL; textC = C_INK; strokeC = C_LINE; break;
         }
         if (fillC != 0) { fill.setColor(fillC); c.drawRoundRect(r, rad, rad, fill); }
         if (strokeC != 0) { stroke.setColor(strokeC); stroke.setStrokeWidth(1.2f * dp); c.drawRoundRect(r, rad, rad, stroke); }
-        if (b.style == UiButton.ICON) drawIcon(c, b.icon, r.centerX(), r.centerY(), textC);
-        else text(c, b.label, r.centerX(), r.centerY(), (b.style == UiButton.SMALL ? 13.5f : 16.5f) * dp, textC, tfBold, Paint.Align.CENTER);
+        if (b.style == UiButton.Style.ICON) drawIcon(c, b.icon, r.centerX(), r.centerY(), textC);
+        else text(c, b.label, r.centerX(), r.centerY(), (b.style == UiButton.Style.SMALL ? 13.5f : 16.5f) * dp, textC, tfBold, Paint.Align.CENTER);
         c.restore();
     }
 
-    private void drawIcon(Canvas c, int icon, float cx, float cy, int col) {
-        if (icon == UiButton.I_PAUSE) {
+    private void drawIcon(Canvas c, UiButton.Icon icon, float cx, float cy, int col) {
+        if (icon == UiButton.Icon.PAUSE) {
             fill.setColor(col);
             tmp.set(cx - 7 * dp, cy - 8 * dp, cx - 2.5f * dp, cy + 8 * dp); c.drawRoundRect(tmp, 1.5f * dp, 1.5f * dp, fill);
             tmp.set(cx + 2.5f * dp, cy - 8 * dp, cx + 7 * dp, cy + 8 * dp); c.drawRoundRect(tmp, 1.5f * dp, 1.5f * dp, fill);
-        } else if (icon == UiButton.I_BACK) {
+        } else if (icon == UiButton.Icon.BACK) {
             stroke.setColor(col); stroke.setStrokeWidth(2.6f * dp);
             path.reset(); path.moveTo(cx + 4 * dp, cy - 8 * dp); path.lineTo(cx - 4 * dp, cy); path.lineTo(cx + 4 * dp, cy + 8 * dp);
             c.drawPath(path, stroke);
@@ -657,7 +648,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         text(c, "Planet", W / 2, ty, 44 * dp, C_INK, tfTitle, Paint.Align.CENTER);
         text(c, "Conquest", W / 2, ty + 48 * dp, 44 * dp, C_INK, tfTitle, Paint.Align.CENTER);
         text(c, "Chinh phục thiên hà bằng một ngón tay", W / 2, ty + 90 * dp, 14.5f * dp, C_MUTED, tfReg, Paint.Align.CENTER);
-        if (best > 0) text(c, "Kỷ lục Endless: " + best + " bản đồ", W / 2, H - 44 * dp, 12.5f * dp, C_MUTED, tfReg, Paint.Align.CENTER);
+        if (progress.bestEndless() > 0) text(c, "Kỷ lục Endless: " + progress.bestEndless() + " bản đồ", W / 2, H - 44 * dp, 12.5f * dp, C_MUTED, tfReg, Paint.Align.CENTER);
         text(c, "Phiên bản " + VERSION, W / 2, H - 24 * dp, 11.5f * dp, alpha(C_MUTED, .7f), tfReg, Paint.Align.CENTER);
     }
 
@@ -685,7 +676,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         for (int i = 0; i <= n; i++) {
             cardRect(i, r);
             if (r.bottom < cardTop() - 10 * dp || r.top > H) continue;
-            boolean endless = i == n, intro = i == 0, isDone = !endless && (intro ? introDone : done.contains(i));
+            boolean endless = i == n, intro = i == 0, isDone = !endless && (intro ? progress.isIntroDone() : progress.isLevelDone(i));
             fill.setColor(0x0FFFFFFF); c.drawRoundRect(r, 16 * dp, 16 * dp, fill);
             stroke.setColor(C_LINE); stroke.setStrokeWidth(dp); c.drawRoundRect(r, 16 * dp, 16 * dp, stroke);
             float ccx = r.left + 34 * dp, ccy = r.centerY();
@@ -696,7 +687,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
             String name = endless ? "Endless" : Levels.ALL[i].name;
             String desc = endless ? "Bản đồ ngẫu nhiên, không hạn chế. Thiên thạch đâm vào hành tinh."
                     : intro ? "Học cách chơi: bạn và một đối thủ, bạn có nhiều đá hơn." : Levels.ALL[i].limit;
-            String right = endless ? (best > 0 ? "Kỷ lục " + best : "3–10 hành tinh") : Levels.ALL[i].planets + " hành tinh";
+            String right = endless ? (progress.bestEndless() > 0 ? "Kỷ lục " + progress.bestEndless() : "3–10 hành tinh") : Levels.ALL[i].planets + " hành tinh";
             float tx = r.left + 64 * dp;
             text(c, name, tx, r.top + 24 * dp, 16 * dp, C_INK, tfBold, Paint.Align.LEFT);
             if (isDone) {
@@ -771,7 +762,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
         // Thanh vùng chọn: số đá đã chọn + nút Hủy (vùng ngón cái)
         Selection s = eng.selection;
-        boolean show = screen == S_PLAY && s != null && (eng.ptr == null || eng.ptr.mode != Engine.M_CARRY);
+        boolean show = screen == S_PLAY && s != null && (eng.ptr == null || eng.ptr.mode != GestureMode.CARRY);
         if (cancelSelBtn != null) cancelSelBtn.visible = show;
         if (show) {
             String msg = "Đã chọn " + s.total() + " đá. Chạm đích để điều động";
@@ -844,7 +835,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private void drawWorld(Canvas c) {
         eng.updateLive();
         Level L = eng.lvl;
-        if (L.range > 0) { tmpPlanets.clear(); for (Planet p : eng.planets) if (p.owner == 0) tmpPlanets.add(p); drawRange(c, tmpPlanets, .16f); }
+        if (L.range > 0) { tmpPlanets.clear(); for (Planet p : eng.planets) if (Faction.isPlayer(p.owner)) tmpPlanets.add(p); drawRange(c, tmpPlanets, .16f); }
         for (Planet p : eng.planets) drawPlanet(c, p);
         for (Planet p : eng.planets) drawOrbit(c, p);
         if (screen == S_PLAY && !L.intro && eng.time < 10 && eng.ptr == null && eng.selection == null && !eng.planets.isEmpty()) {
@@ -916,17 +907,17 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         if (p.level < eng.maxLvl(p) && !fg) {
             stroke.setStrokeWidth(3 * dp);
             stroke.setColor(alpha(C_GOLD, .16f)); c.drawCircle(p.x, p.y, R + 4 * dp, stroke);
-            if (p.upg > 0) { stroke.setColor(C_GOLD); arc(c, p.x, p.y, R + 4 * dp, p.upg / (float) Engine.upgradeCost(p.level)); }
+            if (p.upgradeProgress > 0) { stroke.setColor(C_GOLD); arc(c, p.x, p.y, R + 4 * dp, p.upgradeProgress / (float) Engine.upgradeCost(p.level)); }
         }
-        if (eng.lvl.cooldown > 0 && p.cd > 0) {
+        if (eng.lvl.cooldown > 0 && p.cooldown > 0) {
             stroke.setStrokeWidth(2.5f * dp); stroke.setColor(0xD98FC8FF);
-            arc(c, p.x, p.y, R + 8 * dp, p.cd / eng.lvl.cooldown);
+            arc(c, p.x, p.y, R + 8 * dp, p.cooldown / eng.lvl.cooldown);
         }
         if (p.flash > 0) {
             stroke.setStrokeWidth(3 * dp); stroke.setColor(alpha(0xFFFFFFFF, p.flash));
             c.drawCircle(p.x, p.y, R * (1 + (1 - p.flash) * 1.3f), stroke);
         }
-        String n = fg ? "?" : String.valueOf(p.n);
+        String n = fg ? "?" : String.valueOf(p.rocks);
         float big = Math.max(13 * dp, R * .6f), small = Math.max(8 * dp, R * .27f);
         text(c, n, p.x + dp, p.y - R * .24f + dp, big, 0x73000000, tfBold, Paint.Align.CENTER);
         text(c, n, p.x, p.y - R * .24f, big, 0xFFFFFFFF, tfBold, Paint.Align.CENTER);
@@ -971,7 +962,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
 
     private void drawRocks(Canvas c) {
         for (Rock r : eng.rocks) {
-            int o = r.o;
+            int o = r.owner;
             if (r.idle) {
                 float bx = sin(eng.clock * 1.4f + r.ph) * 1.4f * dp, by = cos(eng.clock * 1.1f + r.ph) * 1.4f * dp;
                 stroke.setColor(alpha(FC[o], .5f)); stroke.setStrokeWidth(dp);
@@ -990,10 +981,10 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     // Kéo thẳng từ hành tinh (gửi nửa số đá)
     private void drawDrag(Canvas c) {
         Engine.Pointer pt = eng.ptr;
-        if (pt == null || pt.mode != Engine.M_QUICK) return;
+        if (pt == null || pt.mode != GestureMode.QUICK) return;
         ArrayList<Planet> sel = pt.qsel;
         Planet h = pt.hover;
-        boolean cancel = h != null && sel.size() == 1 && h == sel.get(0), atk = h != null && h.owner != 0;
+        boolean cancel = h != null && sel.size() == 1 && h == sel.get(0), atk = h != null && !Faction.isPlayer(h.owner);
         float dx = h != null ? h.x : pt.x, dy = h != null ? h.y : pt.y;
         boolean far = !cancel && eng.farFrom(sel, dx, dy);
         int col = cancel ? C_MUTED : far ? C_FAR : atk ? C_DANGER : C_YOU;
@@ -1026,7 +1017,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     // Vòng khoanh, vùng chọn đã khóa và đường kéo tới đích
     private void drawSel(Canvas c) {
         Engine.Pointer pt = eng.ptr;
-        boolean drawing = pt != null && pt.mode == Engine.M_LASSO;
+        boolean drawing = pt != null && pt.mode == GestureMode.LASSO;
         if (drawing && pt.pn > 1) {
             path.reset();
             path.moveTo(pt.px[0], pt.py[0]);
@@ -1058,11 +1049,11 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         stroke.setColor(C_GOLD); stroke.setStrokeWidth(1.5f * dp);
         for (Rock r : sel.loose) if (!r.dead) c.drawCircle(r.x, r.y, r.rad + 3 * dp, stroke);
         int tot = sel.total();
-        if (pt != null && pt.mode == Engine.M_CARRY) {
+        if (pt != null && pt.mode == GestureMode.CARRY) {
             Planet h = pt.hover;
-            boolean atk = h != null && h.owner != 0;
+            boolean atk = h != null && !Faction.isPlayer(h.owner);
             tmpPlanets.clear();
-            for (Planet p : sel.gp) if (p != h) tmpPlanets.add(p);
+            for (Planet p : sel.planets) if (p != h) tmpPlanets.add(p);
             float dx = h != null ? h.x : pt.x, dy = h != null ? h.y : pt.y;
             boolean far = eng.farFrom(tmpPlanets, dx, dy);
             int col = far ? C_FAR : atk ? C_DANGER : C_YOU;
@@ -1075,7 +1066,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
             float lx = h != null ? h.x : pt.x, ly = h != null ? h.y - eng.radiusOf(h) - 34 * dp : pt.y - 48 * dp;
             if (far) pill(c, lx, ly, "Ngoài tầm bay", col);
             else if (h != null) {
-                boolean only = sel.gp.size() == 1 && sel.gp.get(0) == h && sel.loose.isEmpty();
+                boolean only = sel.planets.size() == 1 && sel.planets.get(0) == h && sel.loose.isEmpty();
                 pill(c, lx, ly, atk ? "Tấn công · " + tot + " (máu " + (eng.fogged(h) ? "?" : String.valueOf(eng.hpOf(h))) + ")" : only ? "Nâng cấp · " + tot : "Chuyển quân · " + tot, col);
             } else pill(c, lx, ly, "Điều đến đây · " + tot, col);
         } else pill(c, sel.cx, sel.cy, tot + " đá", C_YOU);

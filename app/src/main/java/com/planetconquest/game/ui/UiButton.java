@@ -1,4 +1,4 @@
-package com.planetconquest.game;
+package com.planetconquest.game.ui;
 
 import android.graphics.RectF;
 
@@ -7,29 +7,30 @@ import android.graphics.RectF;
  * PRIMARY (hành động chính), SECONDARY (hành động phụ), GHOST (quay lại/thoát),
  * ICON (nút biểu tượng vuông bo góc), SMALL (nút nhỏ trong thanh trạng thái).
  */
-final class UiButton {
-    static final int PRIMARY = 0, SECONDARY = 1, GHOST = 2, ICON = 3, SMALL = 4;
-    static final int I_NONE = 0, I_PAUSE = 1, I_BACK = 2;
+public final class UiButton {
+    public enum Style { PRIMARY, SECONDARY, GHOST, ICON, SMALL }
+    public enum Icon { NONE, PAUSE, BACK }
 
-    final int id;
-    final String label;
-    final int style, icon;
-    final RectF r = new RectF();
-    boolean pressed, visible = true;
+    public final int id;
+    public final String label;
+    public final Style style;
+    public final Icon icon;
+    public final RectF r = new RectF();
+    public boolean pressed, visible = true;
 
-    UiButton(int id, String label, int style, int icon) {
+    public UiButton(int id, String label, Style style, Icon icon) {
         this.id = id;
         this.label = label;
         this.style = style;
         this.icon = icon;
     }
 
-    UiButton at(float l, float t, float rr, float b) {
+    public UiButton at(float l, float t, float rr, float b) {
         r.set(l, t, rr, b);
         return this;
     }
 
-    boolean contains(float x, float y, float slop) {
+    public boolean contains(float x, float y, float slop) {
         return visible && x >= r.left - slop && x <= r.right + slop && y >= r.top - slop && y <= r.bottom + slop;
     }
 }
