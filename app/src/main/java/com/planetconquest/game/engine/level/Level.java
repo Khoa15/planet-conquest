@@ -5,7 +5,6 @@ import com.planetconquest.game.engine.util.MathUtil;
 
 /** Cấu hình một màn chơi. Mỗi màn chiến dịch bật đúng một hạn chế. */
 public final class Level {
-    public String name = "", limit = "", tip = "";
     public int planets = 3, playerN = 30, enemyMin = 18, enemyMax = 24, enemyArmor = 0;
     public int neutrals = -1;            // -1: dùng mặc định
     public long seed = 1;

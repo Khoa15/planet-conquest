@@ -7,6 +7,7 @@ import android.graphics.Shader;
 import android.graphics.Path;
 import android.graphics.Paint;
 
+import com.planetconquest.game.R;
 import com.planetconquest.game.engine.Engine;
 import com.planetconquest.game.engine.input.Pointer;
 import com.planetconquest.game.engine.input.GestureMode;
@@ -19,6 +20,7 @@ import com.planetconquest.game.engine.model.Planet;
 import com.planetconquest.game.engine.model.Rock;
 import com.planetconquest.game.engine.model.Selection;
 import com.planetconquest.game.session.GameSession;
+import com.planetconquest.game.text.Texts;
 
 import java.util.ArrayList;
 
@@ -32,18 +34,20 @@ import static com.planetconquest.game.ui.Palette.*;
 public final class WorldRenderer extends Painter {
     private final Engine eng;
     private final GameSession session;
+    private final Texts tx;
     private final float[] dotX = new float[64], dotY = new float[64], rings = new float[16];
     private final int[] FC = Faction.COLORS, FL = Faction.LIGHT, FD = Faction.DARK;
     private final ArrayList<Planet> tmpPlanets = new ArrayList<Planet>();
 
-    public WorldRenderer(DrawKit kit, Engine eng, GameSession session) {
+    public WorldRenderer(DrawKit kit, Engine eng, GameSession session, Texts tx) {
         super(kit);
+        this.tx = tx;
         this.eng = eng;
         this.session = session;
     }
 
     private void drawIntroCue(Canvas c) {
-        if (!eng.lvl.intro || session.introStep() >= GameSession.INTRO_STEPS.length || eng.pointer() != null || eng.planets.size() < 2) return;
+        if (!eng.lvl.intro || session.introStep() >= GameSession.INTRO_STEP_COUNT || eng.pointer() != null || eng.planets.size() < 2) return;
         Planet me = eng.planets.get(0), en = eng.planets.get(1);
         float pulse = .5f + .5f * sin(eng.clock * 4);
         stroke.setColor(alpha(C_GOLD, .55f + .35f * pulse));
@@ -71,7 +75,7 @@ public final class WorldRenderer extends Painter {
                 float px = W() / 2, py = H() * .55f;
                 c.drawCircle(px, py, (18 + 6 * pulse) * dp, stroke);
                 fill.setColor(alpha(C_GOLD, .25f)); c.drawCircle(px, py, 10 * dp, fill);
-                text(c, "Chạm vào đây", px, py + 38 * dp, 12.5f * dp, C_GOLD, tfBold, Paint.Align.CENTER);
+                text(c, tx.s(R.string.touch_here), px, py + 38 * dp, 12.5f * dp, C_GOLD, tfBold, Paint.Align.CENTER);
                 break;
             }
             case 3:
@@ -103,6 +107,7 @@ public final class WorldRenderer extends Painter {
         }
         if (playing) { drawDrag(c); drawSel(c); }
         for (FloatText t : eng.effects.texts) {
+            if (t.text == null) t.text = tx.notice(t.notice);
             float a = Math.min(1, t.life);
             text(c, t.text, t.x + dp, t.y + dp, 14 * dp, alpha(0xFF000000, .6f * a), tfBold, Paint.Align.CENTER);
             text(c, t.text, t.x, t.y, 14 * dp, alpha(t.color, a), tfBold, Paint.Align.CENTER);
@@ -165,8 +170,8 @@ public final class WorldRenderer extends Painter {
         float big = Math.max(13 * dp, R * .6f), small = Math.max(8 * dp, R * .27f);
         text(c, n, p.x + dp, p.y - R * .24f + dp, big, 0x73000000, tfBold, Paint.Align.CENTER);
         text(c, n, p.x, p.y - R * .24f, big, 0xFFFFFFFF, tfBold, Paint.Align.CENTER);
-        text(c, fg ? "Cấp ?" : "Cấp " + p.level + "/" + eng.maxLvl(p), p.x, p.y + R * .28f, small, 0xD9FFFFFF, tfBold, Paint.Align.CENTER);
-        text(c, "Máu " + (fg ? "?" : String.valueOf(eng.hpOf(p))), p.x, p.y + R * .6f, small, 0xB3FFFFFF, tfBold, Paint.Align.CENTER);
+        text(c, fg ? tx.levelPrefix + "?" : tx.levelPrefix + p.level + "/" + eng.maxLvl(p), p.x, p.y + R * .28f, small, 0xD9FFFFFF, tfBold, Paint.Align.CENTER);
+        text(c, tx.hpPrefix + (fg ? "?" : String.valueOf(eng.hpOf(p))), p.x, p.y + R * .6f, small, 0xB3FFFFFF, tfBold, Paint.Align.CENTER);
     }
 
     private void drawOrbit(Canvas c, Planet p) {
@@ -252,10 +257,10 @@ public final class WorldRenderer extends Painter {
         int tot = 0;
         for (Planet s : sel) { if (s == h && sel.size() > 1) continue; tot += eng.quickCount(s); }
         float lx = h != null ? h.x : pt.x, ly = h != null ? h.y - eng.radiusOf(h) - 34 * dp : pt.y - 48 * dp;
-        if (cancel) pill(c, lx, ly, "Thả để hủy", col);
-        else if (far) pill(c, lx, ly, "Ngoài tầm bay", col);
-        else if (h != null) pill(c, lx, ly, atk ? "Tấn công · " + tot + " (máu " + (eng.fogged(h) ? "?" : String.valueOf(eng.hpOf(h))) + ")" : "Chuyển quân · " + tot, col);
-        else pill(c, lx, ly, "Điều đến đây · " + tot, col);
+        if (cancel) pill(c, lx, ly, tx.s(R.string.pill_cancel), col);
+        else if (far) pill(c, lx, ly, tx.s(R.string.msg_out_of_range), col);
+        else if (h != null) pill(c, lx, ly, atk ? tx.s(R.string.pill_attack, tot, eng.fogged(h) ? "?" : String.valueOf(eng.hpOf(h))) : tx.s(R.string.pill_move, tot), col);
+        else pill(c, lx, ly, tx.s(R.string.pill_point, tot), col);
     }
 
     // Vòng khoanh, vùng chọn đã khóa và đường kéo tới đích
@@ -278,7 +283,7 @@ public final class WorldRenderer extends Painter {
                 stroke.setColor(C_GOLD); stroke.setStrokeWidth(1.5f * dp);
                 for (Rock r : lv.loose) c.drawCircle(r.x, r.y, r.rad + 3 * dp, stroke);
                 int tot = lv.total();
-                if (tot > 0) pill(c, pt.x, pt.y - 44 * dp, tot + " đá", C_YOU);
+                if (tot > 0) pill(c, pt.x, pt.y - 44 * dp, tx.s(R.string.pill_rocks, tot), C_YOU);
             }
         }
         Selection sel = eng.selection();
@@ -308,12 +313,12 @@ public final class WorldRenderer extends Painter {
             dashed(true, eng.clock); c.drawLine(sel.cx, sel.cy, ex, ey, stroke); dashed(false, 0);
             if (h != null) { stroke.setStrokeWidth(3 * dp); c.drawCircle(h.x, h.y, eng.radiusOf(h) + 11 * dp, stroke); }
             float lx = h != null ? h.x : pt.x, ly = h != null ? h.y - eng.radiusOf(h) - 34 * dp : pt.y - 48 * dp;
-            if (far) pill(c, lx, ly, "Ngoài tầm bay", col);
+            if (far) pill(c, lx, ly, tx.s(R.string.msg_out_of_range), col);
             else if (h != null) {
                 boolean only = sel.planets.size() == 1 && sel.planets.get(0) == h && sel.loose.isEmpty();
-                pill(c, lx, ly, atk ? "Tấn công · " + tot + " (máu " + (eng.fogged(h) ? "?" : String.valueOf(eng.hpOf(h))) + ")" : only ? "Nâng cấp · " + tot : "Chuyển quân · " + tot, col);
-            } else pill(c, lx, ly, "Điều đến đây · " + tot, col);
-        } else pill(c, sel.cx, sel.cy, tot + " đá", C_YOU);
+                pill(c, lx, ly, atk ? tx.s(R.string.pill_attack, tot, eng.fogged(h) ? "?" : String.valueOf(eng.hpOf(h))) : only ? tx.s(R.string.pill_upgrade, tot) : tx.s(R.string.pill_move, tot), col);
+            } else pill(c, lx, ly, tx.s(R.string.pill_point, tot), col);
+        } else pill(c, sel.cx, sel.cy, tx.s(R.string.pill_rocks, tot), C_YOU);
     }
 
 }

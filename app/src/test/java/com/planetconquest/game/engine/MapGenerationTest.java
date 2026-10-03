@@ -17,9 +17,10 @@ public class MapGenerationTest extends EngineTestBase {
     public void campaignMapsFitEveryScreenSize() {
         for (float[] s : SIZES) {
             e.setSize(s[0], s[1], s[2]);
-            for (Level L : Levels.ALL) {
+            for (int li = 0; li < Levels.ALL.length; li++) {
+                Level L = Levels.ALL[li];
                 start(L);
-                String where = L.name + " @" + (int) s[0] + "x" + (int) s[1];
+                String where = "level " + li + " @" + (int) s[0] + "x" + (int) s[1];
                 assertEquals(where, L.planets, e.planets.size());
                 assertTrue("trong khung " + where, inBounds());
                 assertTrue("không chồng " + where, minDist() > 80 * e.dp);

@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
 
+import com.planetconquest.game.R;
 import com.planetconquest.game.engine.level.Levels;
 import com.planetconquest.game.ui.UiButton;
 
@@ -88,26 +89,25 @@ final class LevelSelectScreen extends BaseScreen {
             c.drawCircle(ccx, ccy, 18 * dp, fill);
             String num = endless ? "∞" : intro ? "?" : String.valueOf(i);
             text(c, num, ccx, ccy, (endless ? 19 : 16) * dp, isDone && !intro ? C_YOU : 0xFF141400, tfBold, Paint.Align.CENTER);
-            String name = endless ? "Endless" : Levels.ALL[i].name;
-            String desc = endless ? "Bản đồ ngẫu nhiên, không hạn chế. Thiên thạch đâm vào hành tinh."
-                    : intro ? "Học cách chơi: bạn và một đối thủ, bạn có nhiều đá hơn." : Levels.ALL[i].limit;
-            String right = endless ? (host.progress().bestEndless() > 0 ? "Kỷ lục " + host.progress().bestEndless() : "3–10 hành tinh") : Levels.ALL[i].planets + " hành tinh";
-            float tx = r.left + 64 * dp;
-            text(c, name, tx, r.top + 24 * dp, 16 * dp, C_INK, tfBold, Paint.Align.LEFT);
+            String name = tx.levelName(endless ? -1 : i);
+            String desc = endless ? tx.s(R.string.endless_card_desc) : intro ? tx.s(R.string.tutorial_card_desc) : tx.levelLimit(i);
+            String right = endless ? (host.progress().bestEndless() > 0 ? tx.s(R.string.best_short, host.progress().bestEndless()) : tx.s(R.string.endless_card_planets)) : tx.s(R.string.planets_count, Levels.ALL[i].planets);
+            float textX = r.left + 64 * dp;
+            text(c, name, textX, r.top + 24 * dp, 16 * dp, C_INK, tfBold, Paint.Align.LEFT);
             if (isDone) {
                 txt.setTextSize(16 * dp); txt.setTypeface(tfBold);
-                text(c, intro ? "Đã học" : "Đã qua", tx + txt.measureText(name) + 10 * dp, r.top + 24 * dp, 12 * dp, C_YOU, tfBold, Paint.Align.LEFT);
+                text(c, tx.s(intro ? R.string.learned : R.string.cleared), textX + txt.measureText(name) + 10 * dp, r.top + 24 * dp, 12 * dp, C_YOU, tfBold, Paint.Align.LEFT);
             }
             text(c, right, r.right - 14 * dp, r.top + 24 * dp, 12 * dp, C_MUTED, tfReg, Paint.Align.RIGHT);
-            ArrayList<String> ls = wrap(desc, 12.5f * dp, tfReg, r.right - tx - 14 * dp);
+            ArrayList<String> ls = wrap(desc, 12.5f * dp, tfReg, r.right - textX - 14 * dp);
             for (int k = 0; k < Math.min(2, ls.size()); k++) {
                 String s = ls.get(k);
                 if (k == 1 && ls.size() > 2) s = s + "…";
-                text(c, s, tx, r.top + 47 * dp + k * 17 * dp, 12.5f * dp, C_MUTED, tfReg, Paint.Align.LEFT);
+                text(c, s, textX, r.top + 47 * dp + k * 17 * dp, 12.5f * dp, C_MUTED, tfReg, Paint.Align.LEFT);
             }
         }
         c.restore();
-        text(c, "Chọn màn", 74 * dp, 40 * dp, 22 * dp, C_INK, tfBold, Paint.Align.LEFT);
+        text(c, tx.s(R.string.levels_title), 74 * dp, 40 * dp, 22 * dp, C_INK, tfBold, Paint.Align.LEFT);
     }
 
 }

@@ -11,13 +11,15 @@ import java.util.ArrayList;
 public abstract class EngineTestBase implements Engine.Listener {
     protected final Engine e = new Engine();
     protected final ArrayList<GameEvent> events = new ArrayList<GameEvent>();
-    protected String lastToast = "", finishReason;
+    protected Msg lastNotice;
+    protected Object[] lastNoticeArgs;
+    protected EndReason finishReason;
     protected Boolean finishWin;
 
-    @Override public void onToast(String m) { lastToast = m; }
+    @Override public void onNotice(Notice n) { lastNotice = n.msg; lastNoticeArgs = n.args; }
     @Override public void onHaptic(Haptic k) { }
     @Override public void onEvent(GameEvent ev) { events.add(ev); }
-    @Override public void onFinish(boolean win, String reason) { finishWin = win; finishReason = reason; }
+    @Override public void onFinish(boolean win, EndReason reason) { finishWin = win; finishReason = reason; }
 
     @Before
     public void setUpEngine() {

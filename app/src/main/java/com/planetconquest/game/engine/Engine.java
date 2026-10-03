@@ -26,10 +26,10 @@ import java.util.Random;
 public final class Engine {
 
     public interface Listener {
-        void onToast(String msg);
+        void onNotice(Notice notice);
         void onHaptic(Haptic kind);
         void onEvent(GameEvent ev);
-        void onFinish(boolean win, String reason);
+        void onFinish(boolean win, EndReason reason);
     }
 
     // ---------- Cân bằng ----------
@@ -63,7 +63,8 @@ public final class Engine {
     private Listener listener;
 
     public void setListener(Listener l) { listener = l; }
-    public void toast(String s) { if (listener != null) listener.onToast(s); }
+    public void notice(Msg msg, Object... args) { notice(new Notice(msg, args)); }
+    public void notice(Notice n) { if (listener != null) listener.onNotice(n); }
     public void haptic(Haptic k) { if (listener != null) listener.onHaptic(k); }
     public void event(GameEvent e) { if (listener != null) listener.onEvent(e); }
 
@@ -100,13 +101,9 @@ public final class Engine {
         return r;
     }
     public int asteroidDamage(Asteroid a) { float k = a.rad / unit; return Math.max(2, Math.round(k * k * ASTEROID_DMG_K)); }
-    public String capMsg(Planet p) {
-        if (lvl.noUpgrade) return "Màn này không cho nâng cấp";
-        return p.captured ? "Hành tinh bị chiếm chỉ lên tối đa cấp " + CAPTURED_MAX_LEVEL : "Đã đạt cấp tối đa";
-    }
-    static String fmt1(float v) {
-        float r = Math.round(v * 10) / 10f;
-        return r == (int) r ? String.valueOf((int) r) : String.valueOf(r);
+    public Notice capMsg(Planet p) {
+        if (lvl.noUpgrade) return new Notice(Msg.NO_UPGRADE_IN_LEVEL);
+        return p.captured ? new Notice(Msg.CAPTURED_MAX_LEVEL, CAPTURED_MAX_LEVEL) : new Notice(Msg.MAX_LEVEL_REACHED);
     }
 
     // ---------- Kích thước & bản đồ ----------
@@ -187,10 +184,10 @@ public final class Engine {
     }
 
     /** Lý do không gửi được theo hạn chế của màn, hoặc null. */
-    public String blockReason(Planet src, float dx, float dy, boolean feed) {
+    public Notice blockReason(Planet src, float dx, float dy, boolean feed) {
         if (feed) return null;
-        if (lvl.cooldown > 0 && src.cooldown > 0) return "Đang nạp đạn, chờ " + (int) Math.ceil(src.cooldown) + "s";
-        if (hyp(dx - src.x, dy - src.y) > rangePx()) return "Ngoài tầm bay";
+        if (lvl.cooldown > 0 && src.cooldown > 0) return new Notice(Msg.COOLDOWN, (int) Math.ceil(src.cooldown));
+        if (hyp(dx - src.x, dy - src.y) > rangePx()) return new Notice(Msg.OUT_OF_RANGE);
         return null;
     }
 
@@ -239,7 +236,7 @@ public final class Engine {
         if (p.upgradeProgress >= upgradeCost(p.level)) {
             p.upgradeProgress = 0; p.level++; p.flash = .8f; p.armor += ARMOR_PER_LEVEL;
             if (Faction.isPlayer(p.owner)) {
-                effects.popText(p.x, p.y - radiusOf(p) - 14 * dp, "Cấp " + p.level + ": +" + fmt1(rateOf(p)) + "/s, chứa " + capOf(p) + ", +" + ARMOR_PER_LEVEL + " máu", 0xFFFFD166);
+                effects.popText(p.x, p.y - radiusOf(p) - 14 * dp, new Notice(Msg.PLANET_LEVEL_UP, p.level, rateOf(p), capOf(p), ARMOR_PER_LEVEL), 0xFFFFD166);
                 haptic(Haptic.LIGHT); event(GameEvent.LEVELUP);
             }
         }
@@ -249,7 +246,7 @@ public final class Engine {
         int old = p.owner;
         p.owner = newO; p.upgradeProgress = 0; p.productionAcc = 0; p.armor = 0; p.rocks = 0; p.flash = 1;
         p.level = 1; p.captured = true;                 // bị chiếm: về cấp 1, từ nay tối đa cấp 4
-        if (Faction.isPlayer(newO) || Faction.isPlayer(old)) effects.popText(p.x, p.y - radiusOf(p) - 14 * dp, Faction.isPlayer(newO) ? "Chiếm được: về cấp 1" : "Bị chiếm", Faction.COLORS[newO]);
+        if (Faction.isPlayer(newO) || Faction.isPlayer(old)) effects.popText(p.x, p.y - radiusOf(p) - 14 * dp, new Notice(Faction.isPlayer(newO) ? Msg.PLANET_CAPTURED : Msg.PLANET_LOST), Faction.COLORS[newO]);
         haptic(Faction.isPlayer(newO) ? Haptic.LIGHT : Haptic.HEAVY);
         if (Faction.isPlayer(newO)) event(GameEvent.CAPTURE);
         boolean alive = false;
@@ -275,7 +272,7 @@ public final class Engine {
         int dmg = asteroidDamage(a), left = dmg;
         while (left > 0 && (p.armor > 0 || p.rocks > 0)) { if (p.armor > 0) p.armor--; else p.rocks--; left--; }
         effects.burst(a.x, a.y, 0xFFFFB36B, 8 + Math.round(a.rad / dp)); p.flash = .5f;
-        effects.popText(p.x, p.y - radiusOf(p) - 10 * dp, "-" + dmg, 0xFFFF9B6B);
+        effects.popText(p.x, p.y - radiusOf(p) - 10 * dp, new Notice(Msg.ASTEROID_DAMAGE, dmg), 0xFFFF9B6B);
         if (Faction.isPlayer(p.owner)) haptic(Haptic.HEAVY);
     }
 
@@ -359,18 +356,18 @@ public final class Engine {
     private void checkEnd() {
         int mine = 0;
         for (Planet p : planets) if (Faction.isPlayer(p.owner)) mine++;
-        if (mine == 0) { finish(false, "Hành tinh cuối cùng của bạn đã bị chiếm."); return; }
+        if (mine == 0) { finish(false, EndReason.ALL_PLANETS_LOST); return; }
         if (mine == planets.size()) { finish(true, null); return; }
-        if (lvl.timeLimit > 0 && time >= lvl.timeLimit) { finish(false, "Hết giờ trước khi chiếm đủ hành tinh."); return; }
+        if (lvl.timeLimit > 0 && time >= lvl.timeLimit) { finish(false, EndReason.TIME_UP); return; }
         if (lvl.noProduction) {
             int t = 0;
             for (Planet p : planets) if (Faction.isPlayer(p.owner)) t += p.rocks;
             for (Rock r : rocks) if (Faction.isPlayer(r.owner)) t++;
-            if (t == 0) finish(false, "Bạn đã hết đá và không còn cách chiếm tiếp.");
+            if (t == 0) finish(false, EndReason.OUT_OF_ROCKS);
         }
     }
 
-    private void finish(boolean win, String reason) {
+    private void finish(boolean win, EndReason reason) {
         over = true; gestures.reset();
         if (listener != null) listener.onFinish(win, reason);
     }

@@ -14,12 +14,16 @@ import com.planetconquest.game.audio.Sound;
 import com.planetconquest.game.data.ProgressStore;
 import com.planetconquest.game.engine.Engine;
 import com.planetconquest.game.engine.input.Pointer;
+import com.planetconquest.game.R;
+import com.planetconquest.game.engine.EndReason;
 import com.planetconquest.game.engine.GameEvent;
 import com.planetconquest.game.engine.Haptic;
+import com.planetconquest.game.engine.Notice;
 import com.planetconquest.game.screen.Screen;
 import com.planetconquest.game.screen.ScreenHost;
 import com.planetconquest.game.screen.Screens;
 import com.planetconquest.game.session.GameSession;
+import com.planetconquest.game.text.Texts;
 import com.planetconquest.game.ui.DrawKit;
 import com.planetconquest.game.ui.StarField;
 import com.planetconquest.game.ui.UiButton;
@@ -41,6 +45,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private final Engine eng = new Engine();
     private final Sfx sfx;
     private final ProgressStore progress;
+    private final Texts texts;
     private final GameSession session;
     private final Screens screens;
     private Screen current;
@@ -56,6 +61,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
         dp = getResources().getDisplayMetrics().density;
         this.sfx = sfx;
         this.progress = progress;
+        texts = new Texts(getResources());
         kit = new DrawKit(dp);
         stars = new StarField(kit);
         session = new GameSession(eng, progress);
@@ -72,6 +78,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     @Override public GameSession session() { return session; }
     @Override public ProgressStore progress() { return progress; }
     @Override public Sfx sfx() { return sfx; }
+    @Override public Texts texts() { return texts; }
     @Override public Screens screens() { return screens; }
 
     @Override
@@ -137,7 +144,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     public boolean onBack() { return current.onBack(); }
 
     // ================= Sự kiện từ engine =================
-    @Override public void onToast(String m) { toast(m); }
+    @Override public void onNotice(Notice n) { toast(texts.notice(n)); }
 
     @Override
     public void onHaptic(Haptic kind) {
@@ -148,11 +155,11 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     public void onEvent(GameEvent ev) {
         sfx.onEngineEvent(ev);
         int step = session.onEvent(ev);
-        if (step > 0) toast("Tốt lắm! Sang bước " + step);
+        if (step > 0) toast(texts.s(R.string.intro_next, step));
     }
 
     @Override
-    public void onFinish(boolean win, String reason) {
+    public void onFinish(boolean win, EndReason reason) {
         sfx.play(win ? Sound.WIN : Sound.LOSE);
         GameSession.EndInfo info = session.finish(win, reason);
         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);

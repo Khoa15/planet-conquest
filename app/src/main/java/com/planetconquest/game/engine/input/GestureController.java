@@ -3,6 +3,8 @@ package com.planetconquest.game.engine.input;
 import com.planetconquest.game.engine.Engine;
 import com.planetconquest.game.engine.GameEvent;
 import com.planetconquest.game.engine.Haptic;
+import com.planetconquest.game.engine.Msg;
+import com.planetconquest.game.engine.Notice;
 import com.planetconquest.game.engine.model.Faction;
 import com.planetconquest.game.engine.model.Planet;
 import com.planetconquest.game.engine.model.Rock;
@@ -110,22 +112,22 @@ public final class GestureController {
             selection = s; eng.haptic(Haptic.LIGHT); eng.event(GameEvent.LASSO);
             ptr.mode = GestureMode.CARRY; ptr.lockX = ptr.x; ptr.lockY = ptr.y;
         } else {
-            eng.toast("Vòng khoanh chưa có đá");
+            eng.notice(Msg.LASSO_EMPTY);
             ptr.pn = 0; ptr.add(ptr.x, ptr.y); ptr.len = 0;
         }
     }
 
     private void finishLasso(Pointer p) {
-        if (p.len < 90 * eng.dp || bboxMin(p.px, p.py, p.pn) < 28 * eng.dp) { eng.toast("Khoanh vòng quanh đá để chọn"); return; }
+        if (p.len < 90 * eng.dp || bboxMin(p.px, p.py, p.pn) < 28 * eng.dp) { eng.notice(Msg.LASSO_TOO_SMALL); return; }
         Selection s = computeSelection(p.px, p.py, p.pn);
         if (s.total() > 0) { selection = s; eng.haptic(Haptic.LIGHT); eng.event(GameEvent.LASSO); }
-        else eng.toast("Vòng khoanh chưa có đá");
+        else eng.notice(Msg.LASSO_EMPTY);
     }
 
     private void upgradeTap(Planet p) {
-        if (p.level >= eng.maxLvl(p)) { eng.toast(eng.capMsg(p)); return; }
+        if (p.level >= eng.maxLvl(p)) { eng.notice(eng.capMsg(p)); return; }
         int c = Math.min(Engine.upgradeCost(p.level) - p.upgradeProgress, p.rocks);
-        if (c < 1) { eng.toast("Hành tinh hết đá"); return; }
+        if (c < 1) { eng.notice(Msg.PLANET_OUT_OF_ROCKS); return; }
         if (eng.launch(p, p, 0, 0, c, true) > 0) eng.event(GameEvent.UPGRADE);
     }
 
@@ -144,22 +146,22 @@ public final class GestureController {
         if (h != null && qsel.size() == 1 && h == qsel.get(0)) return;           // kéo về chính nó: hủy
         float dx = targetX(h, x), dy = targetY(h, y);
         int any = 0;
-        String reason = null;
+        Notice reason = null;
         for (Planet s : qsel) {
             if (s == h) continue;
-            String why = eng.blockReason(s, dx, dy, false);
+            Notice why = eng.blockReason(s, dx, dy, false);
             if (why != null) { reason = why; continue; }
             int c = quickCount(s);
             if (c > 0 && eng.launch(s, h, dx, dy, c, false) > 0) any++;
         }
-        if (any == 0) eng.toast(reason != null ? reason : "Hết đá để gửi");
+        if (any == 0) eng.notice(reason != null ? reason : new Notice(Msg.NO_ROCKS_TO_SEND));
         else eng.event(moveEvent(h));
     }
 
     private void dispatch(Selection sel, Planet h, float x, float y) {
         selection = null;
         float dx = targetX(h, x), dy = targetY(h, y);
-        String reason = null;
+        Notice reason = null;
         boolean sent = false, fed = false;
         for (int i = 0; i < sel.planets.size(); i++) {
             Planet p = sel.planets.get(i);
@@ -167,17 +169,17 @@ public final class GestureController {
             int c = Math.min(sel.counts[i], p.rocks);
             if (c <= 0) continue;
             if (h != null && h == p) {                                           // thả lại chính hành tinh nguồn: nạp nâng cấp
-                if (p.level >= eng.maxLvl(p)) { eng.toast(eng.capMsg(p)); continue; }
+                if (p.level >= eng.maxLvl(p)) { eng.notice(eng.capMsg(p)); continue; }
                 if (eng.launch(p, p, 0, 0, c, true) > 0) fed = true;
             } else {
-                String why = eng.blockReason(p, dx, dy, false);
+                Notice why = eng.blockReason(p, dx, dy, false);
                 if (why != null) { reason = why; continue; }
                 if (eng.launch(p, h, dx, dy, c, false) > 0) sent = true;
             }
         }
         int li = 0;
         for (Rock r : sel.loose) if (!r.dead && Faction.isPlayer(r.owner)) { eng.redirect(r, h, dx, dy, li++); sent = true; }
-        if (reason != null) eng.toast(reason);
+        if (reason != null) eng.notice(reason);
         if (fed) eng.event(GameEvent.UPGRADE);
         if (sent) eng.event(moveEvent(h));
     }

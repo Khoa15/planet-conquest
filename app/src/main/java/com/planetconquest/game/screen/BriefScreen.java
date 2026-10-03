@@ -1,13 +1,12 @@
 package com.planetconquest.game.screen;
 
+import com.planetconquest.game.R;
 import android.graphics.Canvas;
 
 import com.planetconquest.game.engine.level.Level;
 import com.planetconquest.game.engine.level.Levels;
 import com.planetconquest.game.ui.Dialog;
 import com.planetconquest.game.ui.UiButton;
-
-import java.util.Random;
 
 import static com.planetconquest.game.ui.Palette.*;
 
@@ -26,25 +25,19 @@ final class BriefScreen extends BaseScreen {
     public void layout() {
         buttons.clear();
         if (W() <= 0) return;
-        if (index < 0) {
-            dialog.begin("Endless", C_GOLD, "Bản đồ ngẫu nhiên 3–10 hành tinh. Qua một bản đồ thì bản đồ tiếp theo xuất hiện, khó hơn một chút. Thua là kết thúc.");
-            Level sample = Levels.endless(1, new Random());
-            dialog.section("Hạn chế", sample.limit, C_LIMIT);
-            dialog.section("Lưu ý", sample.tip, C_INK);
-        } else {
-            Level L = Levels.ALL[index];
-            dialog.begin("Màn " + index + " · " + L.name, C_INK, L.planets + " hành tinh. Chiếm hết để thắng.");
-            dialog.section("Hạn chế", L.limit, C_LIMIT);
-            dialog.section("Cách vượt qua", L.tip, C_INK);
-        }
-        dialog.button("Bắt đầu", UiButton.Style.PRIMARY, new Runnable() {
+        dialog.begin(index < 0 ? tx.levelName(-1) : tx.s(R.string.level_label, index, tx.levelName(index)),
+                index < 0 ? C_GOLD : C_INK,
+                index < 0 ? tx.s(R.string.brief_endless_sub) : tx.s(R.string.brief_sub, Levels.ALL[index].planets));
+        dialog.section(tx.s(R.string.section_limit), tx.levelLimit(index), C_LIMIT);
+        dialog.section(tx.s(index < 0 ? R.string.section_note : R.string.section_howto), tx.levelTip(index), C_INK);
+        dialog.button(tx.s(R.string.btn_start), UiButton.Style.PRIMARY, new Runnable() {
             @Override public void run() {
                 if (index < 0) host.session().newEndlessRun();
                 else host.session().startLevel(index);
                 host.go(host.screens().play());
             }
         });
-        dialog.button("Quay lại", UiButton.Style.GHOST, new Runnable() {
+        dialog.button(tx.s(R.string.btn_back), UiButton.Style.GHOST, new Runnable() {
             @Override public void run() { host.go(host.screens().levels()); }
         });
         dialog.layout();

@@ -1,5 +1,6 @@
 package com.planetconquest.game.engine.fx;
 
+import com.planetconquest.game.engine.Notice;
 import com.planetconquest.game.engine.model.Faction;
 import com.planetconquest.game.engine.model.FloatText;
 import com.planetconquest.game.engine.model.Particle;
@@ -38,9 +39,9 @@ public final class Effects {
         }
     }
 
-    public void popText(float x, float y, String s, int color) {
+    public void popText(float x, float y, Notice notice, int color) {
         FloatText t = new FloatText();
-        t.x = x; t.y = y; t.text = s; t.color = color; t.life = 1.6f;
+        t.x = x; t.y = y; t.notice = notice; t.color = color; t.life = 1.6f;
         texts.add(t);
     }
 

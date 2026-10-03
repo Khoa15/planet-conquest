@@ -1,5 +1,6 @@
 package com.planetconquest.game.screen;
 
+import com.planetconquest.game.R;
 import android.graphics.Canvas;
 
 import com.planetconquest.game.audio.MusicTrack;
@@ -27,14 +28,14 @@ final class EndScreen extends BaseScreen {
     public void layout() {
         buttons.clear();
         if (W() <= 0) return;
-        dialog.begin(info.title, info.win ? C_YOU : C_DANGER, info.text);
-        if (info.next != null) dialog.button(info.next, UiButton.Style.PRIMARY, new Runnable() {
+        dialog.begin(tx.endTitle(info), info.win() ? C_YOU : C_DANGER, tx.endText(info));
+        if (info.hasNext()) dialog.button(tx.endNext(info), UiButton.Style.PRIMARY, new Runnable() {
             @Override public void run() { next(); }
         });
-        if (info.again) dialog.button("Chơi lại", info.next == null ? UiButton.Style.PRIMARY : UiButton.Style.SECONDARY, new Runnable() {
+        if (info.hasAgain()) dialog.button(tx.s(R.string.btn_restart), !info.hasNext() ? UiButton.Style.PRIMARY : UiButton.Style.SECONDARY, new Runnable() {
             @Override public void run() { host.session().again(); host.go(play); }
         });
-        dialog.button("Chọn màn", UiButton.Style.GHOST, new Runnable() {
+        dialog.button(tx.s(R.string.btn_pick_level), UiButton.Style.GHOST, new Runnable() {
             @Override public void run() { host.go(host.screens().levels()); }
         });
         dialog.layout();

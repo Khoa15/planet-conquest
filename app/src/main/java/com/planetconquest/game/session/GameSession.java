@@ -1,6 +1,7 @@
 package com.planetconquest.game.session;
 
 import com.planetconquest.game.data.ProgressStore;
+import com.planetconquest.game.engine.EndReason;
 import com.planetconquest.game.engine.Engine;
 import com.planetconquest.game.engine.GameEvent;
 import com.planetconquest.game.engine.level.Level;
@@ -13,23 +14,30 @@ import java.util.Random;
  * khởi động/chơi lại màn, và soạn nội dung màn kết thúc. Các màn hình dùng chung một GameSession.
  */
 public final class GameSession {
-    public static final String[] INTRO_STEPS = {
-            "Chạm giữ hành tinh xanh của bạn, kéo sang hành tinh đỏ rồi thả tay. Một nửa số đá sẽ bay đi tấn công.",
-            "Khoanh một vòng quanh những viên đá đang quay quanh hành tinh của bạn để chọn chúng.",
-            "Chạm vào vòng sáng ở giữa màn hình: đá đã chọn bay tới và chờ ở đó. Đá khác phe va vào nhau sẽ cùng vỡ.",
-            "Chạm vào hành tinh của bạn để nâng cấp: sinh đá nhanh hơn, chứa nhiều hơn và được thêm giáp.",
-            "Máu = số đá + giáp. Tiếp tục gửi đá vào hành tinh đỏ cho tới khi chiếm được nó."
-    };
     private static final GameEvent[] INTRO_EV = {GameEvent.ATTACK, GameEvent.LASSO, GameEvent.POINT, GameEvent.UPGRADE, GameEvent.CAPTURE};
 
-    /** Nội dung màn kết thúc. next == null: không có nút "tiếp theo". */
-    public static final class EndInfo {
-        public final boolean win, again;
-        public final String title, text, next;
+    /** Số bước của màn Hướng dẫn. */
+    public static final int INTRO_STEP_COUNT = INTRO_EV.length;
 
-        EndInfo(boolean win, String title, String text, String next, boolean again) {
-            this.win = win; this.title = title; this.text = text; this.next = next; this.again = again;
+    public enum EndKind { ENDLESS_WIN, ENDLESS_LOSE, INTRO_WIN, INTRO_LOSE, WIN, LOSE }
+
+    /** Kết quả một màn dưới dạng dữ liệu; chữ hiển thị do Texts dựng. */
+    public static final class EndInfo {
+        public final EndKind kind;
+        public final EndReason reason;
+        public final int planets, map, cleared, best, level;
+        public final String time;
+        public final boolean lastLevel;
+
+        EndInfo(EndKind kind, EndReason reason, int planets, String time, int map, int cleared, int best, int level, boolean lastLevel) {
+            this.kind = kind; this.reason = reason; this.planets = planets; this.time = time;
+            this.map = map; this.cleared = cleared; this.best = best; this.level = level; this.lastLevel = lastLevel;
         }
+
+        public boolean win() { return kind == EndKind.ENDLESS_WIN || kind == EndKind.INTRO_WIN || kind == EndKind.WIN; }
+        public boolean hasNext() { return win(); }
+        /** Endless thắng thì chỉ có "bản đồ tiếp theo", không có "chơi lại". */
+        public boolean hasAgain() { return kind != EndKind.ENDLESS_WIN; }
     }
 
     private final Engine eng;
@@ -84,12 +92,6 @@ public final class GameSession {
         else startLevel(curLevel);
     }
 
-    public String levelLabel() {
-        if (curLevel < 0) return "Endless · Bản đồ " + endlessMap;
-        if (curLevel == 0) return "Hướng dẫn";
-        return "Màn " + curLevel + " · " + Levels.ALL[curLevel].name;
-    }
-
     /** Chuyển sự kiện engine vào tiến trình Hướng dẫn. Trả về số bước mới (từ 2) nếu vừa sang bước kế tiếp, ngược lại 0. */
     public int onEvent(GameEvent ev) {
         if (!eng.lvl.intro || introStep >= INTRO_EV.length || ev != INTRO_EV[introStep]) return 0;
@@ -97,35 +99,25 @@ public final class GameSession {
         return introStep < INTRO_EV.length ? introStep + 1 : 0;
     }
 
-    /** Ghi nhận kết quả vào tiến độ và soạn nội dung màn kết thúc. */
-    public EndInfo finish(boolean win, String reason) {
+    /** Ghi nhận kết quả vào tiến độ và trả về dữ liệu màn kết thúc. */
+    public EndInfo finish(boolean win, EndReason reason) {
         Level L = eng.lvl;
-        String t = fmtTime(eng.time);
+        String time = fmtTime(eng.time);
+        int planets = eng.planets.size();
         EndInfo info;
         if (L.endless) {
             if (win) {
                 endlessCleared = endlessMap;
                 progress.recordEndless(endlessCleared);
-                info = new EndInfo(true, "Qua bản đồ " + endlessMap,
-                        "Đã chiếm " + eng.planets.size() + " hành tinh sau " + t + ". Bản đồ tiếp theo ngẫu nhiên và khó hơn một chút. Kỷ lục: " + progress.bestEndless() + " bản đồ.",
-                        "Bản đồ tiếp theo", false);
-            } else {
-                info = new EndInfo(false, "Kết thúc hành trình",
-                        reason + " Bạn đã vượt " + endlessCleared + " bản đồ. Kỷ lục: " + progress.bestEndless() + ".", null, true);
             }
+            info = new EndInfo(win ? EndKind.ENDLESS_WIN : EndKind.ENDLESS_LOSE, reason, planets, time,
+                    endlessMap, endlessCleared, progress.bestEndless(), curLevel, false);
         } else if (L.intro) {
-            if (win) {
-                progress.markIntroDone();
-                info = new EndInfo(true, "Hoàn thành hướng dẫn",
-                        "Bạn đã nắm đủ cách chơi. Mỗi màn tiếp theo có một hạn chế riêng để vượt qua.", "Vào màn 1", true);
-            } else info = new EndInfo(false, "Thử lại nhé", reason, null, true);
-        } else if (win) {
-            progress.markLevelDone(curLevel);
-            info = new EndInfo(true, "Chiến thắng",
-                    "Đã chiếm " + eng.planets.size() + " hành tinh sau " + t + ", dù hạn chế: " + L.limit.toLowerCase(),
-                    curLevel < Levels.CAMPAIGN_LAST ? "Màn tiếp theo" : "Thử Endless", true);
+            if (win) progress.markIntroDone();
+            info = new EndInfo(win ? EndKind.INTRO_WIN : EndKind.INTRO_LOSE, reason, planets, time, 0, 0, 0, curLevel, false);
         } else {
-            info = new EndInfo(false, "Thất bại", reason, null, true);
+            if (win) progress.markLevelDone(curLevel);
+            info = new EndInfo(win ? EndKind.WIN : EndKind.LOSE, reason, planets, time, 0, 0, 0, curLevel, curLevel >= Levels.CAMPAIGN_LAST);
         }
         progress.save();
         return info;

@@ -1,7 +1,9 @@
 package com.planetconquest.game.screen;
 
 import com.planetconquest.game.audio.MusicTrack;
+import com.planetconquest.game.R;
 import com.planetconquest.game.engine.Engine;
+import com.planetconquest.game.text.Texts;
 import com.planetconquest.game.ui.Painter;
 import com.planetconquest.game.ui.UiButton;
 
@@ -12,12 +14,14 @@ import java.util.List;
 abstract class BaseScreen extends Painter implements Screen {
     protected final ScreenHost host;
     protected final Engine eng;
+    protected final Texts tx;
     protected final ArrayList<UiButton> buttons = new ArrayList<UiButton>();
 
     protected BaseScreen(ScreenHost host) {
         super(host.kit());
         this.host = host;
         this.eng = host.engine();
+        this.tx = host.texts();
     }
 
     @Override public void enter() { layout(); }
@@ -37,7 +41,7 @@ abstract class BaseScreen extends Painter implements Screen {
 
     protected final UiButton add(UiButton b) { buttons.add(b); return b; }
 
-    protected final String soundLabel() { return host.sfx().isOn() ? "Âm thanh: Bật" : "Âm thanh: Tắt"; }
+    protected final String soundLabel() { return tx.s(host.sfx().isOn() ? R.string.sound_on : R.string.sound_off); }
 
     protected final void toggleSound() {
         host.sfx().toggle();

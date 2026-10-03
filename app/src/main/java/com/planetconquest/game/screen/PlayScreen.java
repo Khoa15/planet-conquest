@@ -3,6 +3,7 @@ package com.planetconquest.game.screen;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
+import com.planetconquest.game.R;
 import com.planetconquest.game.audio.MusicTrack;
 import com.planetconquest.game.engine.input.GestureMode;
 import com.planetconquest.game.engine.level.Level;
@@ -26,7 +27,7 @@ public final class PlayScreen extends BaseScreen {
     PlayScreen(ScreenHost host) {
         super(host);
         session = host.session();
-        world = new WorldRenderer(kit, eng, session);
+        world = new WorldRenderer(kit, eng, session, tx);
     }
 
     @Override
@@ -37,7 +38,7 @@ public final class PlayScreen extends BaseScreen {
         add(new UiButton(null, UiButton.Style.ICON, UiButton.Icon.PAUSE, new Runnable() {
             @Override public void run() { eng.cancelPointer(); host.go(host.screens().pause()); }
         })).at(W - 56 * dp, 9 * dp, W - 12 * dp, 53 * dp);
-        cancelSelBtn = add(new UiButton("Hủy", UiButton.Style.SMALL, UiButton.Icon.NONE, new Runnable() {
+        cancelSelBtn = add(new UiButton(tx.s(R.string.btn_cancel), UiButton.Style.SMALL, UiButton.Icon.NONE, new Runnable() {
             @Override public void run() { eng.cancelSelection(); }
         }));
         cancelSelBtn.visible = false;
@@ -90,25 +91,25 @@ public final class PlayScreen extends BaseScreen {
         hudBottom = 0;
         chipY = 12 * dp;
         float x = 12 * dp;
-        x = chip(c, x, chipY, "Hành tinh", eng.playerPlanets() + "/" + eng.planets.size(), C_INK) + 6 * dp;
-        x = chip(c, x, chipY, "Đá", String.valueOf(eng.playerRocks()), C_INK) + 6 * dp;
+        x = chip(c, x, chipY, tx.s(R.string.hud_planets), eng.playerPlanets() + "/" + eng.planets.size(), C_INK) + 6 * dp;
+        x = chip(c, x, chipY, tx.s(R.string.hud_rocks), String.valueOf(eng.playerRocks()), C_INK) + 6 * dp;
         Level L = eng.lvl;
         if (L.timeLimit > 0) {
             int left = Math.max(0, (int) Math.ceil(L.timeLimit - eng.time));
-            chip(c, x, chipY, "Còn", left + "s", left <= 15 ? C_DANGER : C_INK);
-        } else if (L.endless) chip(c, x, chipY, "Bản đồ", String.valueOf(session.endlessMap()), C_INK);
+            chip(c, x, chipY, tx.s(R.string.hud_time_left), tx.s(R.string.hud_seconds, left), left <= 15 ? C_DANGER : C_INK);
+        } else if (L.endless) chip(c, x, chipY, tx.s(R.string.hud_map), String.valueOf(session.endlessMap()), C_INK);
         hudBottom = Math.max(hudBottom, 53 * dp);
-        if (L.intro && session.introStep() < GameSession.INTRO_STEPS.length) hudBottom = drawCoach(c, hudBottom + 8 * dp);
+        if (L.intro && session.introStep() < GameSession.INTRO_STEP_COUNT) hudBottom = drawCoach(c, hudBottom + 8 * dp);
 
         // Thanh vùng chọn: số đá đã chọn + nút Hủy (vùng ngón cái)
         Selection s = eng.selection();
         boolean show = active && s != null && (eng.pointer() == null || eng.pointer().mode != GestureMode.CARRY);
         if (cancelSelBtn != null) cancelSelBtn.visible = show;
         if (show) {
-            String msg = "Đã chọn " + s.total() + " đá. Chạm đích để điều động";
+            String msg = tx.s(R.string.sel_hint, s.total());
             txt.setTextSize(13.5f * dp); txt.setTypeface(tfReg);
             float tw2 = txt.measureText(msg), bw = 64 * dp, h = 46 * dp, w = 18 * dp + tw2 + 12 * dp + bw + 5 * dp;
-            if (w > W() - 24 * dp) { msg = "Đã chọn " + s.total() + " đá"; tw2 = txt.measureText(msg); w = 18 * dp + tw2 + 12 * dp + bw + 5 * dp; }
+            if (w > W() - 24 * dp) { msg = tx.s(R.string.sel_short, s.total()); tw2 = txt.measureText(msg); w = 18 * dp + tw2 + 12 * dp + bw + 5 * dp; }
             float bx = (W() - w) / 2, by = H() - 16 * dp - h;
             tmp.set(bx, by, bx + w, by + h);
             panel(c, tmp, h / 2, C_LINE);
@@ -119,14 +120,14 @@ public final class PlayScreen extends BaseScreen {
 
     private float drawCoach(Canvas c, float top) {
         float x = 12 * dp, w = W() - 24 * dp, pad = 14 * dp;
-        ArrayList<String> lines = wrap(GameSession.INTRO_STEPS[session.introStep()], 14.5f * dp, tfReg, w - 2 * pad);
+        ArrayList<String> lines = wrap(tx.introSteps()[session.introStep()], 14.5f * dp, tfReg, w - 2 * pad);
         float h = pad + 18 * dp + lines.size() * 21 * dp + pad - 2 * dp;
         tmp.set(x, top, x + w, top + h);
         panel(c, tmp, 16 * dp, alpha(C_GOLD, .45f));
-        text(c, "Hướng dẫn · bước " + (session.introStep() + 1) + "/" + GameSession.INTRO_STEPS.length, x + pad, top + pad + 6 * dp, 12 * dp, C_GOLD, tfBold, Paint.Align.LEFT);
-        for (int i = 0; i < GameSession.INTRO_STEPS.length; i++) {
+        text(c, tx.s(R.string.coach_header, session.introStep() + 1, GameSession.INTRO_STEP_COUNT), x + pad, top + pad + 6 * dp, 12 * dp, C_GOLD, tfBold, Paint.Align.LEFT);
+        for (int i = 0; i < GameSession.INTRO_STEP_COUNT; i++) {
             fill.setColor(i < session.introStep() ? C_GOLD : (i == session.introStep() ? alpha(C_GOLD, .8f) : alpha(C_MUTED, .4f)));
-            c.drawCircle(x + w - pad - (GameSession.INTRO_STEPS.length - 1 - i) * 12 * dp, top + pad + 6 * dp, (i == session.introStep() ? 4 : 3) * dp, fill);
+            c.drawCircle(x + w - pad - (GameSession.INTRO_STEP_COUNT - 1 - i) * 12 * dp, top + pad + 6 * dp, (i == session.introStep() ? 4 : 3) * dp, fill);
         }
         float y = top + pad + 18 * dp;
         for (String s : lines) { text(c, s, x + pad, y + 10 * dp, 14.5f * dp, C_INK, tfReg, Paint.Align.LEFT); y += 21 * dp; }

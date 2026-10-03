@@ -15,7 +15,7 @@ public class LevelRestrictionTest extends EngineTestBase {
     public void level1_noUpgrade() {
         start(Levels.ALL[1]); tick(60); tap(me().x, me().y); tick(5);
         assertEquals(1, me().level);
-        assertTrue(lastToast.contains("không cho nâng cấp"));
+        assertEquals(Msg.NO_UPGRADE_IN_LEVEL, lastNotice);
     }
 
     @Test
@@ -33,14 +33,14 @@ public class LevelRestrictionTest extends EngineTestBase {
         assertEquals(n0, me().rocks);
         me().rocks = 0; e.rocks.clear(); tick(2);
         assertEquals(Boolean.FALSE, finishWin);
-        assertTrue(finishReason.contains("hết đá"));
+        assertEquals(EndReason.OUT_OF_ROCKS, finishReason);
     }
 
     @Test
     public void level4_timeLimit() {
         start(Levels.ALL[4]); freezeAi(); secs(101);
         assertEquals(Boolean.FALSE, finishWin);
-        assertTrue(finishReason.contains("Hết giờ"));
+        assertEquals(EndReason.TIME_UP, finishReason);
     }
 
     @Test
@@ -56,7 +56,7 @@ public class LevelRestrictionTest extends EngineTestBase {
         }
         int b0 = me().rocks; drag(me(), far.x, far.y);
         assertEquals(b0, me().rocks);
-        assertEquals("Ngoài tầm bay", lastToast);
+        assertEquals(Msg.OUT_OF_RANGE, lastNotice);
         int b1 = me().rocks; drag(me(), near.x, near.y);
         assertTrue(b1 - me().rocks > 0);
     }
@@ -83,11 +83,11 @@ public class LevelRestrictionTest extends EngineTestBase {
     public void level8_cooldownBetweenLaunches() {
         start(Levels.ALL[8]); freezeAi(); Planet tg = e.planets.get(1);
         int a1 = me().rocks; drag(me(), tg.x, tg.y); int a2 = me().rocks; drag(me(), tg.x, tg.y); int a3 = me().rocks;
-        String cdToast = lastToast;
+        Msg cdToast = lastNotice;
         secs(4.2f); int a4 = me().rocks; drag(me(), tg.x, tg.y);
         assertTrue(a1 > a2);
         assertEquals(a2, a3);
-        assertTrue(cdToast.startsWith("Đang nạp đạn"));
+        assertEquals(Msg.COOLDOWN, cdToast);
         assertTrue(a4 > me().rocks);
     }
 
