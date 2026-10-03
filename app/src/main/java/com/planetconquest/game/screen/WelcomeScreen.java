@@ -12,7 +12,7 @@ import com.planetconquest.game.ui.WelcomeScene;
 import static com.planetconquest.game.engine.util.ColorUtil.alpha;
 import static com.planetconquest.game.ui.Palette.*;
 
-/** Màn Welcome: hoạt ảnh nền, tiêu đề, nút Chơi / Hướng dẫn / Âm thanh. */
+/** Màn Welcome: hoạt ảnh nền, tiêu đề, nút Chơi ngay / Bản đồ / Hướng dẫn / Âm thanh. */
 final class WelcomeScreen extends BaseScreen {
     private final WelcomeScene scene;
     private float t, sceneW, sceneH;
@@ -29,7 +29,10 @@ final class WelcomeScreen extends BaseScreen {
         if (W <= 0) return;
         if (W != sceneW || H != sceneH) { scene.setSize(W, H); sceneW = W; sceneH = H; }
         float bw = Math.min(W - 48 * dp, 420 * dp), bx = (W - bw) / 2;
-        add(new UiButton(tx.s(R.string.btn_play), UiButton.Style.PRIMARY, UiButton.Icon.NONE, new Runnable() {
+        add(new UiButton(tx.s(R.string.btn_play_now), UiButton.Style.PRIMARY, UiButton.Icon.NONE, new Runnable() {
+            @Override public void run() { host.session().startNext(); host.go(host.screens().play()); }
+        })).at(bx, H - 258 * dp, bx + bw, H - 202 * dp);
+        add(new UiButton(tx.s(R.string.btn_map), UiButton.Style.SECONDARY, UiButton.Icon.NONE, new Runnable() {
             @Override public void run() { host.go(host.screens().levels()); }
         })).at(bx, H - 190 * dp, bx + bw, H - 134 * dp);
         add(new UiButton(tx.s(R.string.btn_tutorial), UiButton.Style.SECONDARY, UiButton.Icon.NONE, new Runnable() {

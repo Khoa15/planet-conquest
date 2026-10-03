@@ -44,7 +44,8 @@ app/src/main/java/com/planetconquest/game/
   GameView.java         Vòng lặp khung hình, chuyển cảm ứng/vẽ cho Screen đang hiện, thông báo nổi
   screen/               Mỗi màn hình một lớp (State): Welcome, LevelSelect, Brief, Play, Pause, End
   session/GameSession   Phiên chơi: màn hiện tại, Endless, bước Hướng dẫn, dữ liệu màn kết thúc
-  ui/                   UiButton, Dialog, DrawKit/Painter, StarField, WorldRenderer, WelcomeScene, Palette
+  ui/                   UiButton, Dialog, DrawKit/Painter, StarField, WorldRenderer, WelcomeScene, Palette,
+                        LevelPlanet, LevelPlanetRenderer, LevelPath (bản đồ chọn màn)
   audio/                Sfx (SoundPool + AudioTrack), Sound, MusicTrack
   data/ProgressStore    Tiến độ lưu trong SharedPreferences
   text/Texts            Cổng duy nhất tra chuỗi trong res/values/strings.xml
