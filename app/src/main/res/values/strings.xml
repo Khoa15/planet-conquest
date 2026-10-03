@@ -54,8 +54,8 @@
     <string name="coach_header">Hướng dẫn · bước %1$d/%2$d</string>
     <string name="intro_next">Tốt lắm! Sang bước %1$d</string>
     <string name="touch_here">Chạm vào đây</string>
-    <string name="planet_level_prefix">Cấp </string>
-    <string name="planet_hp_prefix">Máu </string>
+    <string name="planet_level_prefix">"Cấp "</string>
+    <string name="planet_hp_prefix">"Máu "</string>
     <string name="pill_cancel">Thả để hủy</string>
     <string name="pill_attack">Tấn công · %1$d (máu %2$s)</string>
     <string name="pill_move">Chuyển quân · %1$d</string>
