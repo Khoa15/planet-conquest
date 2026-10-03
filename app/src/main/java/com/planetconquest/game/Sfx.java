@@ -6,12 +6,15 @@ import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
 import android.media.SoundPool;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 
 import com.planetconquest.game.engine.Engine;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 /**
  * Âm thanh của game: hiệu ứng ngắn (SoundPool, độ trễ thấp) và nhạc nền lặp (AudioTrack).
@@ -28,13 +31,26 @@ final class Sfx {
     private static final float[] VOL = {.6f, .5f, .5f, .5f, .45f, .7f, .8f, .8f, .9f, .9f};
     private static final long MIN_GAP_MS = 70;      // chống dồn tiếng khi nhiều sự kiện liên tiếp
     private static final float MUSIC_VOL = .45f;
+    private static final int FADE_MS = 1200, TICK_MS = 40;   // crossfade giữa hai bài nhạc
+
+    /** Một bài nhạc đang phát; gain 0..1 chạy về target để vào/ra dần. */
+    private static final class Bgm {
+        final AudioTrack tr;
+        float gain, target;
+        Bgm(AudioTrack tr, float gain, float target) { this.tr = tr; this.gain = gain; this.target = target; }
+    }
 
     private final Context ctx;
     private final SharedPreferences prefs;
     private final SoundPool pool;
     private final int[] ids = new int[RES.length];
     private final long[] last = new long[RES.length];
-    private AudioTrack mp;
+    private final ArrayList<Bgm> tracks = new ArrayList<>();   // bài đang phát + các bài đang nhỏ dần
+    private Bgm cur;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable ticker = new Runnable() {
+        @Override public void run() { if (fadeStep()) handler.postDelayed(this, TICK_MS); }
+    };
     private int track = TRACK_NONE;
     private boolean on, hostActive = true, duck;
 
@@ -53,7 +69,7 @@ final class Sfx {
     void toggle() {
         on = !on;
         prefs.edit().putBoolean("sound", on).apply();
-        if (on) { int t = track; track = TRACK_NONE; music(t); } else stopPlayer();
+        if (on) { int t = track; track = TRACK_NONE; music(t); } else { handler.removeCallbacks(ticker); stopAll(); }
     }
 
     /** Ánh xạ sự kiện của engine sang tiếng tương ứng. */
@@ -78,12 +94,12 @@ final class Sfx {
         try { pool.play(ids[fx], VOL[fx], VOL[fx], 1, 0, 1f); } catch (RuntimeException ignored) { }
     }
 
-    /** Chọn bài nhạc nền; gọi lại với cùng bài thì không làm gì. */
+    /** Chọn bài nhạc nền; bài cũ nhỏ dần và bài mới lớn dần chồng lên nhau (crossfade). */
     void music(int t) {
-        if (t == track && (mp != null || t == TRACK_NONE)) return;
+        if (t == track && (cur != null || t == TRACK_NONE || !on)) return;
         track = t;
-        stopPlayer();
-        if (!on || t == TRACK_NONE) return;
+        if (cur != null) { cur.target = 0; cur = null; }
+        if (!on || t == TRACK_NONE) { kick(); return; }
         try {
             byte[] pcm = readPcm(t == TRACK_MENU ? R.raw.bgm_menu : R.raw.bgm_game);
             AudioAttributes aa = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME)
@@ -94,10 +110,35 @@ final class Sfx {
             AudioTrack tr = new AudioTrack(aa, af, pcm.length, AudioTrack.MODE_STATIC, android.media.AudioManager.AUDIO_SESSION_ID_GENERATE);
             tr.write(pcm, 0, pcm.length);
             tr.setLoopPoints(0, pcm.length / 2, -1);
-            mp = tr;
-            applyVolume();
-            if (hostActive) mp.play();
-        } catch (RuntimeException | java.io.IOException e) { stopPlayer(); }
+            boolean first = tracks.isEmpty();
+            cur = new Bgm(tr, first ? 1f : 0f, 1f);       // bài đầu tiên vào luôn, các bài sau vào dần
+            tracks.add(cur);
+            applyVolume(cur);
+            if (hostActive) tr.play();
+        } catch (RuntimeException | java.io.IOException e) { cur = null; }
+        kick();
+    }
+
+    private void kick() { handler.removeCallbacks(ticker); handler.post(ticker); }
+
+    /** Một bước crossfade. Trả về true nếu còn bài đang đổi âm lượng. */
+    private boolean fadeStep() {
+        float d = TICK_MS / (float) FADE_MS;
+        boolean more = false;
+        for (int i = tracks.size() - 1; i >= 0; i--) {
+            Bgm b = tracks.get(i);
+            if (b.gain < b.target) b.gain = Math.min(b.target, b.gain + d);
+            else if (b.gain > b.target) b.gain = Math.max(b.target, b.gain - d);
+            if (b.gain == 0 && b.target == 0) { release(b); tracks.remove(i); continue; }
+            applyVolume(b);
+            if (b.gain != b.target) more = true;
+        }
+        return more;
+    }
+
+    private void release(Bgm b) {
+        try { b.tr.stop(); } catch (RuntimeException ignored) { }
+        b.tr.release();
     }
 
     /** Đọc dữ liệu PCM 16-bit từ file WAV trong res/raw (bỏ qua mọi chunk trước chunk "data"). */
@@ -124,32 +165,32 @@ final class Sfx {
     }
 
     /** Hạ nhạc khi tạm dừng để hộp thoại dễ nghe. */
-    void duck(boolean d) { duck = d; applyVolume(); }
+    void duck(boolean d) { duck = d; for (Bgm b : tracks) applyVolume(b); }
 
     void onHostPause() {
         hostActive = false;
-        try { if (mp != null) mp.pause(); } catch (RuntimeException ignored) { }
+        for (Bgm b : tracks) try { b.tr.pause(); } catch (RuntimeException ignored) { }
     }
 
     void onHostResume() {
         hostActive = true;
-        try { if (on && mp != null) mp.play(); } catch (RuntimeException ignored) { }
+        if (on) for (Bgm b : tracks) try { b.tr.play(); } catch (RuntimeException ignored) { }
     }
 
     void release() {
-        stopPlayer();
+        handler.removeCallbacks(ticker);
+        stopAll();
         pool.release();
     }
 
-    private void applyVolume() {
-        float v = duck ? MUSIC_VOL * .4f : MUSIC_VOL;
-        try { if (mp != null) mp.setVolume(v); } catch (RuntimeException ignored) { }
+    private void applyVolume(Bgm b) {
+        float v = (duck ? MUSIC_VOL * .4f : MUSIC_VOL) * b.gain;
+        try { b.tr.setVolume(v); } catch (RuntimeException ignored) { }
     }
 
-    private void stopPlayer() {
-        if (mp == null) return;
-        try { mp.stop(); } catch (RuntimeException ignored) { }
-        mp.release();
-        mp = null;
+    private void stopAll() {
+        for (Bgm b : tracks) release(b);
+        tracks.clear();
+        cur = null;
     }
 }
