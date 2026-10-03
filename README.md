@@ -38,18 +38,29 @@ Cấu hình Gradle chưa được chạy thử trong môi trường build APK đ
 ## Cấu trúc
 
 ```
+```
 app/src/main/java/com/planetconquest/game/
-  MainActivity.java     Toàn màn hình, chuyển vòng đời (onPause => tạm dừng game)
-  GameView.java         Vòng lặp khung hình, các màn hình, vẽ Canvas, nhận cảm ứng
-  UiButton.java         Nút chuẩn: PRIMARY / SECONDARY / GHOST / ICON / SMALL
+  MainActivity.java     Toàn màn hình, chuyển vòng đời, tạo Sfx và ProgressStore rồi đưa vào GameView
+  GameView.java         Vòng lặp khung hình, chuyển cảm ứng/vẽ cho Screen đang hiện, thông báo nổi
+  screen/               Mỗi màn hình một lớp (State): Welcome, LevelSelect, Brief, Play, Pause, End
+  session/GameSession   Phiên chơi: màn hiện tại, Endless, bước Hướng dẫn, dữ liệu màn kết thúc
+  ui/                   UiButton, Dialog, DrawKit/Painter, StarField, WorldRenderer, WelcomeScene, Palette
+  audio/                Sfx (SoundPool + AudioTrack), Sound, MusicTrack
+  data/ProgressStore    Tiến độ lưu trong SharedPreferences
+  text/Texts            Cổng duy nhất tra chuỗi trong res/values/strings.xml
   engine/               Logic Java thuần, không phụ thuộc Android
-    Engine.java         Luật chơi, AI, va chạm, cử chỉ khoanh vòng / kéo thả
-    Levels.java         Màn Hướng dẫn, 9 màn chiến dịch, bộ sinh màn Endless
-tools/EngineSim.java    Kiểm thử engine trên JVM (./build.sh test)
+    Engine.java         Luật chơi và vòng mô phỏng, điều phối các thành phần dưới đây
+    model/              Planet, Rock, Asteroid, Selection, Faction...
+    rules/              LevelRule + RuleSet và các hạn chế (NoUpgrade, Fog, Cooldown, ...)
+    ai/                 AiStrategy, DefaultAi, PassiveAi
+    input/              GestureController (khoanh vòng, kéo thả, chạm), Pointer
+    physics/            CollisionGrid     level/  Level, Levels, MapGenerator
+    fx/Effects          Hạt vỡ và chữ bay    util/  MathUtil, ColorUtil
+app/src/test/java/      Kiểm thử JUnit 4 cho engine, chạy trên JVM (./build.sh test)
 prototype/web/          Bản prototype HTML5 ban đầu, giữ làm tham chiếu luật chơi
 ```
 
-Engine tách khỏi Android nên toàn bộ luật chơi được kiểm thử trên máy tính, còn `GameView` chỉ lo vẽ và giao diện.
+Engine tách khỏi Android nên toàn bộ luật chơi được kiểm thử trên máy tính, còn giao diện nằm ở `screen/` và `ui/`. Mọi chữ hiển thị nằm trong `strings.xml`; engine chỉ phát mã thông báo (`Msg`).
 
 ## Màn hình
 
@@ -102,7 +113,7 @@ dẫn qua 5 bước có gợi ý trực quan. Giao diện khi chơi không còn 
 | 9. Đối thủ tăng tốc | 10 | Đối thủ sinh đá gấp đôi |
 | Endless | 3–10 ngẫu nhiên | Không hạn chế; thiên thạch đâm hành tinh, càng to càng mất máu |
 
-Thông số cân bằng nằm ở đầu `Engine.java`; cấu hình từng màn ở `Levels.java`.
+Thông số cân bằng nằm ở đầu `Engine.java`; cấu hình từng màn ở `engine/level/Levels.java`; hạn chế của màn là các `LevelRule` trong `engine/rules/`.
 
 ## Chưa có trong MVP
 

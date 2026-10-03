@@ -1,4 +1,146 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Planet Conquest</string>
+
+    <!-- Nút -->
+    <string name="btn_play">Chơi</string>
+    <string name="btn_tutorial">Hướng dẫn</string>
+    <string name="btn_cancel">Hủy</string>
+    <string name="btn_start">Bắt đầu</string>
+    <string name="btn_back">Quay lại</string>
+    <string name="btn_resume">Tiếp tục</string>
+    <string name="btn_restart">Chơi lại</string>
+    <string name="btn_quit_menu">Thoát ra menu</string>
+    <string name="btn_pick_level">Chọn màn</string>
+    <string name="sound_on">Âm thanh: Bật</string>
+    <string name="sound_off">Âm thanh: Tắt</string>
+
+    <!-- Welcome -->
+    <string name="title_planet" translatable="false">Planet</string>
+    <string name="title_conquest" translatable="false">Conquest</string>
+    <string name="tagline">Chinh phục thiên hà bằng một ngón tay</string>
+    <string name="best_endless">Kỷ lục Endless: %1$d bản đồ</string>
+    <string name="version">Phiên bản %1$s</string>
+
+    <!-- Chọn màn / mô tả -->
+    <string name="levels_title">Chọn màn</string>
+    <string name="endless_name">Endless</string>
+    <string name="endless_card_desc">Bản đồ ngẫu nhiên, không hạn chế. Thiên thạch đâm vào hành tinh.</string>
+    <string name="tutorial_card_desc">Học cách chơi: bạn và một đối thủ, bạn có nhiều đá hơn.</string>
+    <string name="best_short">Kỷ lục %1$d</string>
+    <string name="endless_card_planets">3–10 hành tinh</string>
+    <string name="planets_count">%1$d hành tinh</string>
+    <string name="learned">Đã học</string>
+    <string name="cleared">Đã qua</string>
+    <string name="brief_endless_sub">Bản đồ ngẫu nhiên 3–10 hành tinh. Qua một bản đồ thì bản đồ tiếp theo xuất hiện, khó hơn một chút. Thua là kết thúc.</string>
+    <string name="section_limit">Hạn chế</string>
+    <string name="section_note">Lưu ý</string>
+    <string name="section_howto">Cách vượt qua</string>
+    <string name="level_label">Màn %1$d · %2$s</string>
+    <string name="brief_sub">%1$d hành tinh. Chiếm hết để thắng.</string>
+    <string name="endless_label">Endless · Bản đồ %1$d</string>
+    <string name="endless_limit">Không có hạn chế nào: nâng cấp, sinh đá, tầm bay đều bình thường.</string>
+    <string name="endless_tip">Thiên thạch trôi nổi đâm vào hành tinh và trừ giáp rồi đến đá canh gác: càng to càng mất nhiều máu.</string>
+    <string name="pause_title">Tạm dừng</string>
+
+    <!-- HUD và chỉ dẫn khi chơi -->
+    <string name="hud_planets">Hành tinh</string>
+    <string name="hud_rocks">Đá</string>
+    <string name="hud_time_left">Còn</string>
+    <string name="hud_map">Bản đồ</string>
+    <string name="hud_seconds">%1$ds</string>
+    <string name="sel_hint">Đã chọn %1$d đá. Chạm đích để điều động</string>
+    <string name="sel_short">Đã chọn %1$d đá</string>
+    <string name="coach_header">Hướng dẫn · bước %1$d/%2$d</string>
+    <string name="intro_next">Tốt lắm! Sang bước %1$d</string>
+    <string name="touch_here">Chạm vào đây</string>
+    <string name="planet_level_prefix">"Cấp "</string>
+    <string name="planet_hp_prefix">"Máu "</string>
+    <string name="pill_cancel">Thả để hủy</string>
+    <string name="pill_attack">Tấn công · %1$d (máu %2$s)</string>
+    <string name="pill_move">Chuyển quân · %1$d</string>
+    <string name="pill_point">Điều đến đây · %1$d</string>
+    <string name="pill_upgrade">Nâng cấp · %1$d</string>
+    <string name="pill_rocks">%1$d đá</string>
+
+    <!-- Thông báo từ engine (Msg) -->
+    <string name="msg_no_upgrade">Màn này không cho nâng cấp</string>
+    <string name="msg_captured_max">Hành tinh bị chiếm chỉ lên tối đa cấp %1$d</string>
+    <string name="msg_max_level">Đã đạt cấp tối đa</string>
+    <string name="msg_cooldown">Đang nạp đạn, chờ %1$ds</string>
+    <string name="msg_out_of_range">Ngoài tầm bay</string>
+    <string name="msg_level_up">Cấp %1$d: +%2$s/s, chứa %3$d, +%4$d máu</string>
+    <string name="msg_captured">Chiếm được: về cấp 1</string>
+    <string name="msg_lost">Bị chiếm</string>
+    <string name="msg_damage">-%1$d</string>
+    <string name="msg_lasso_empty">Vòng khoanh chưa có đá</string>
+    <string name="msg_lasso_small">Khoanh vòng quanh đá để chọn</string>
+    <string name="msg_planet_empty">Hành tinh hết đá</string>
+    <string name="msg_no_rocks">Hết đá để gửi</string>
+    <string name="reason_all_lost">Hành tinh cuối cùng của bạn đã bị chiếm.</string>
+    <string name="reason_time_up">Hết giờ trước khi chiếm đủ hành tinh.</string>
+    <string name="reason_out_of_rocks">Bạn đã hết đá và không còn cách chiếm tiếp.</string>
+
+    <!-- Màn kết thúc -->
+    <string name="end_endless_win_title">Qua bản đồ %1$d</string>
+    <string name="end_endless_win_text">Đã chiếm %1$d hành tinh sau %2$s. Bản đồ tiếp theo ngẫu nhiên và khó hơn một chút. Kỷ lục: %3$d bản đồ.</string>
+    <string name="end_endless_next">Bản đồ tiếp theo</string>
+    <string name="end_endless_lose_title">Kết thúc hành trình</string>
+    <string name="end_endless_lose_text">%1$s Bạn đã vượt %2$d bản đồ. Kỷ lục: %3$d.</string>
+    <string name="end_intro_win_title">Hoàn thành hướng dẫn</string>
+    <string name="end_intro_win_text">Bạn đã nắm đủ cách chơi. Mỗi màn tiếp theo có một hạn chế riêng để vượt qua.</string>
+    <string name="end_intro_next">Vào màn 1</string>
+    <string name="end_intro_lose_title">Thử lại nhé</string>
+    <string name="end_win_title">Chiến thắng</string>
+    <string name="end_win_text">Đã chiếm %1$d hành tinh sau %2$s, dù hạn chế: %3$s</string>
+    <string name="end_next_level">Màn tiếp theo</string>
+    <string name="end_try_endless">Thử Endless</string>
+    <string name="end_lose_title">Thất bại</string>
+
+    <!-- Màn chơi: [0] Hướng dẫn, [1..9] chiến dịch -->
+    <string-array name="level_names">
+        <item>Hướng dẫn</item>
+        <item>Làm quen</item>
+        <item>Kho nhỏ</item>
+        <item>Mùa khô</item>
+        <item>Chạy đua</item>
+        <item>Tay ngắn</item>
+        <item>Sương mù</item>
+        <item>Bãi thiên thạch</item>
+        <item>Nạp đạn</item>
+        <item>Đối thủ tăng tốc</item>
+    </string-array>
+    <string-array name="level_limits">
+        <item>Không có hạn chế. Đối thủ đứng yên để bạn tập.</item>
+        <item>Không thể nâng cấp hành tinh.</item>
+        <item>Mỗi hành tinh chỉ chứa tối đa 30 đá, dù cấp nào.</item>
+        <item>Hành tinh không sinh thêm đá. Số đá là có hạn.</item>
+        <item>Chỉ có 100 giây để chiếm hết hành tinh.</item>
+        <item>Đá chỉ bay được một quãng ngắn (vòng nét đứt quanh hành tinh).</item>
+        <item>Không thấy số đá và máu của đối thủ.</item>
+        <item>Thiên thạch dày đặc chặn đường: đá của bạn đụng vào sẽ vỡ.</item>
+        <item>Mỗi hành tinh chỉ gửi quân được một lần mỗi 4 giây.</item>
+        <item>Mọi đối thủ sinh đá nhanh gấp đôi bạn.</item>
+    </string-array>
+    <string-array name="level_tips">
+        <item>Làm theo từng bước hiện trên màn hình.</item>
+        <item>Không có nâng cấp nên tốc độ là tất cả: chiếm hành tinh yếu trước để có thêm nguồn sinh đá, rồi mới đánh hành tinh mạnh.</item>
+        <item>Đá đầy là phí. Đừng tích trữ: liên tục gửi quân đi đánh, hoặc nạp đá nâng cấp để dùng hết đá dư.</item>
+        <item>Mỗi viên đá đều quý. Đánh hành tinh yếu nhất trước, tránh đối đầu trực diện và để các đối thủ tự tiêu hao lẫn nhau.</item>
+        <item>Khoanh vòng gom đá từ nhiều hành tinh để đánh dồn một mục tiêu. Đừng chờ đủ quân mới đánh.</item>
+        <item>Không đánh xa được. Chiếm hành tinh gần nhất làm bàn đạp rồi đánh tiếp từ đó.</item>
+        <item>Gửi một đợt nhỏ để thăm dò: hành tinh bị đánh sẽ lộ số đá và máu trong 3 giây. Biết rồi mới dồn quân đánh thật.</item>
+        <item>Chọn đường bay thông thoáng, gửi dư quân để bù đá vỡ, hoặc điều đá ra chỗ trống chờ thiên thạch trôi qua.</item>
+        <item>Khoanh vòng để gửi đồng loạt từ nhiều hành tinh trong một lần, và chọn đúng lúc để mỗi lần gửi đủ mạnh.</item>
+        <item>Đánh sớm trước khi họ tích lũy. Hành tinh bạn chiếm được sinh đá bình thường cho bạn, nên hạ từng đối thủ một.</item>
+    </string-array>
+
+    <!-- Các bước màn Hướng dẫn -->
+    <string-array name="intro_steps">
+        <item>Chạm giữ hành tinh xanh của bạn, kéo sang hành tinh đỏ rồi thả tay. Một nửa số đá sẽ bay đi tấn công.</item>
+        <item>Khoanh một vòng quanh những viên đá đang quay quanh hành tinh của bạn để chọn chúng.</item>
+        <item>Chạm vào vòng sáng ở giữa màn hình: đá đã chọn bay tới và chờ ở đó. Đá khác phe va vào nhau sẽ cùng vỡ.</item>
+        <item>Chạm vào hành tinh của bạn để nâng cấp: sinh đá nhanh hơn, chứa nhiều hơn và được thêm giáp.</item>
+        <item>Máu = số đá + giáp. Tiếp tục gửi đá vào hành tinh đỏ cho tới khi chiếm được nó.</item>
+    </string-array>
 </resources>
