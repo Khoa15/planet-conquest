@@ -23,13 +23,16 @@ def notes(seq, step, f=bell, **kw):
         s = f(fr, 1.2, **kw); o = int(i*step*SR); out[o:o+len(s)] += s
     return out
 
-def write(name, x, vol=0.7):
+def write(name, x, vol=0.7, loop=False):
     x = x / max(1e-9, np.abs(x).max()) * vol
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tf: p = tf.name
     with wave.open(p, "wb") as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x*32767).astype("<i2").tobytes())
     os.makedirs(OUT, exist_ok=True)
-    subprocess.run(["ffmpeg","-y","-loglevel","error","-i",p,"-c:a","vorbis","-strict","-2","-ac","2","-b:a","96k",os.path.join(OUT,name+".ogg")], check=True)
+    if loop:   # nhạc nền: PCM mono 32 kHz để AudioTrack lặp vòng không khe hở
+        subprocess.run(["ffmpeg","-y","-loglevel","error","-i",p,"-ac","1","-ar","32000","-c:a","pcm_s16le",os.path.join(OUT,name+".wav")], check=True)
+    else:
+        subprocess.run(["ffmpeg","-y","-loglevel","error","-i",p,"-c:a","vorbis","-strict","-2","-ac","2","-b:a","96k",os.path.join(OUT,name+".ogg")], check=True)
     os.unlink(p)
 
 N = lambda s: 440*2**((s-9)/12)   # semitone từ C4: 0=C4
@@ -64,7 +67,7 @@ def music(name, chords, arp_oct, bpm, bars_rep=2, arp_vol=.5, bass=True):
                 nt=bell(N(s),1.4,decay=3.5)*arp_vol*(.7 if k%2 else 1); oo=o+int(k*beat/2*SR); x[oo:oo+len(nt)]+=nt[:len(x)-oo]
     L=int(SR*total); y=x[:L].copy(); tl=x[L:]; y[:len(tl)]+=tl   # gập đuôi vào đầu
     # echo nhẹ
-    dl=int(SR*beat*.75); y2=y.copy(); y2[dl:]+=.3*y[:-dl]; write(name,y2,.55)
+    dl=int(SR*beat*.75); y2=y+.3*np.roll(y,dl); write(name,y2,.55,loop=True)   # roll: echo cũng khép vòng
 music("bgm_menu", [[0,7,11,16],[-3,4,9,14],[-7,0,5,9],[-5,2,7,11]], 1, 70, 2, .45)
 music("bgm_game", [[-3,4,7,12],[-7,0,4,9],[-4,3,7,10],[-5,2,7,11]], 1, 96, 2, .55)
 print("done")
