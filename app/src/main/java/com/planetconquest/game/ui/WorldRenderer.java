@@ -88,7 +88,7 @@ public final class WorldRenderer extends Painter {
     public void draw(Canvas c, boolean playing) {
         eng.updateLive();
         Level L = eng.lvl;
-        if (L.range > 0) { tmpPlanets.clear(); for (Planet p : eng.planets) if (Faction.isPlayer(p.owner)) tmpPlanets.add(p); drawRange(c, tmpPlanets, .16f); }
+        if (!Float.isInfinite(eng.rangePx())) { tmpPlanets.clear(); for (Planet p : eng.planets) if (Faction.isPlayer(p.owner)) tmpPlanets.add(p); drawRange(c, tmpPlanets, .16f); }
         for (Planet p : eng.planets) drawPlanet(c, p);
         for (Planet p : eng.planets) drawOrbit(c, p);
         if (playing && !L.intro && eng.time < 10 && eng.pointer() == null && eng.selection() == null && !eng.planets.isEmpty()) {
@@ -158,9 +158,9 @@ public final class WorldRenderer extends Painter {
             stroke.setColor(alpha(C_GOLD, .16f)); c.drawCircle(p.x, p.y, R + 4 * dp, stroke);
             if (p.upgradeProgress > 0) { stroke.setColor(C_GOLD); arc(c, p.x, p.y, R + 4 * dp, p.upgradeProgress / (float) Engine.upgradeCost(p.level)); }
         }
-        if (eng.lvl.cooldown > 0 && p.cooldown > 0) {
+        if (eng.rules().cooldownSeconds() > 0 && p.cooldown > 0) {
             stroke.setStrokeWidth(2.5f * dp); stroke.setColor(0xD98FC8FF);
-            arc(c, p.x, p.y, R + 8 * dp, p.cooldown / eng.lvl.cooldown);
+            arc(c, p.x, p.y, R + 8 * dp, p.cooldown / eng.rules().cooldownSeconds());
         }
         if (p.flash > 0) {
             stroke.setStrokeWidth(3 * dp); stroke.setColor(alpha(0xFFFFFFFF, p.flash));
@@ -190,7 +190,7 @@ public final class WorldRenderer extends Painter {
     }
 
     private void drawNeutrals(Canvas c) {
-        boolean hot = eng.lvl.asteroidHits;
+        boolean hot = eng.rules().asteroidsHitPlanets();
         for (Asteroid a : eng.neutrals) {
             path.reset();
             for (int i = 0; i < 8; i++) {

@@ -1,5 +1,7 @@
 package com.planetconquest.game.engine.level;
 
+import com.planetconquest.game.engine.rules.RuleSet;
+
 import com.planetconquest.game.engine.model.*;
 import com.planetconquest.game.engine.util.MathUtil;
 
@@ -13,11 +15,9 @@ public final class Level {
     public float boldShift = 0f;
     public float[][] fixed;              // vị trí cố định {nx, ny, size} (màn Hướng dẫn)
 
-    // Các hạn chế
-    public boolean noUpgrade, noProduction, fog;
-    public int capCap, timeLimit;
-    public float range, cooldown, enemyProd;
+    /** Các hạn chế của màn (mỗi hạn chế là một LevelRule). */
+    public final RuleSet rules = new RuleSet();
 
     // Chế độ đặc biệt
-    public boolean intro, endless, passiveAi, asteroidHits;
+    public boolean intro, endless, passiveAi;
 }

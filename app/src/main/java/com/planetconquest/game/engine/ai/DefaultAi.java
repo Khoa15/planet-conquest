@@ -27,7 +27,7 @@ public final class DefaultAi implements AiStrategy {
         float pressure = clamp((full - .55f) / .4f, 0, 1);       // kho càng đầy càng liều
         float bold = p.bold + (.9f - p.bold) * pressure;
         int threat = incoming(eng, p);
-        int keep = eng.lvl.noProduction ? 3 : 10;
+        int keep = eng.rules().finiteRocks() ? 3 : 10;
         int reserve = Math.min(p.rocks, Math.max(0, (int) Math.ceil(threat * 1.15f) - p.armor) + keep);
         int avail = p.rocks - reserve;
         for (Planet q : eng.planets) {                                // chi viện đồng minh đang bị đánh
@@ -36,7 +36,7 @@ public final class DefaultAi implements AiStrategy {
             int t = incoming(eng, q);
             if (t > eng.hpOf(q) * .7f && avail >= 8) avail -= eng.launch(p, q, 0, 0, Math.min(avail, (int) Math.ceil(t * .8f)), false);
         }
-        if (avail < (eng.lvl.noProduction ? 5 : 8)) return;
+        if (avail < (eng.rules().finiteRocks() ? 5 : 8)) return;
         boolean canUp = p.level < eng.maxLvl(p) && threat == 0;
         int want = Engine.upgradeCost(p.level) - p.upgradeProgress;
         boolean mustAttack = full >= .85f;
@@ -64,7 +64,7 @@ public final class DefaultAi implements AiStrategy {
     @Override
     public void onLull(Engine eng) {
         float rp = eng.rangePx();
-        int keep = eng.lvl.noProduction ? 3 : 10, minA = eng.lvl.noProduction ? 6 : 12;
+        int keep = eng.rules().finiteRocks() ? 3 : 10, minA = eng.rules().finiteRocks() ? 6 : 12;
         ArrayList<Planet> src = new ArrayList<Planet>();
         for (Planet p : eng.planets) if (!Faction.isPlayer(p.owner) && p.rocks - Math.min(p.rocks, keep) >= minA) src.add(p);
         for (int i = 1; i < src.size(); i++)

@@ -24,7 +24,7 @@ public class MapGenerationTest extends EngineTestBase {
                 assertEquals(where, L.planets, e.planets.size());
                 assertTrue("trong khung " + where, inBounds());
                 assertTrue("không chồng " + where, minDist() > 80 * e.dp);
-                if (L.range > 0) assertRangeConnected(where);
+                if (!Float.isInfinite(e.rangePx())) assertRangeConnected(where);
             }
         }
     }

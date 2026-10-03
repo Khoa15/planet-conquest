@@ -11,6 +11,7 @@ import com.planetconquest.game.engine.level.Levels;
 import com.planetconquest.game.engine.level.MapGenerator;
 import com.planetconquest.game.engine.model.*;
 import com.planetconquest.game.engine.physics.CollisionGrid;
+import com.planetconquest.game.engine.rules.RuleSet;
 
 import static com.planetconquest.game.engine.util.MathUtil.*;
 
@@ -88,21 +89,20 @@ public final class Engine {
 
     // ---------- Luật theo màn ----------
     public float radiusOf(Planet p) { return p.base * (1 + 0.08f * (p.level - 1)); }
-    public int maxLvl(Planet p) { return lvl.noUpgrade ? 1 : (p.captured ? CAPTURED_MAX_LEVEL : MAX_LEVEL); }
-    public int capOf(Planet p) { int c = capacity(p.level); return lvl.capCap > 0 ? Math.min(c, lvl.capCap) : c; }
+    public int maxLvl(Planet p) { return rules().maxLevel(p, p.captured ? CAPTURED_MAX_LEVEL : MAX_LEVEL); }
+    public int capOf(Planet p) { return rules().capacity(p, capacity(p.level)); }
     public int hpOf(Planet p) { return p.rocks + p.armor; }                  // máu = số đá + giáp
-    public boolean fogged(Planet p) { return lvl.fog && !Faction.isPlayer(p.owner) && p.reveal <= 0; }
-    public float rangePx() { return lvl.range > 0 ? unit * lvl.range : Float.POSITIVE_INFINITY; }
+    public boolean fogged(Planet p) { return rules().hidesInfo(p); }
+    public float rangePx() { float f = rules().rangeFraction(); return f > 0 ? unit * f : Float.POSITIVE_INFINITY; }
+    public RuleSet rules() { return lvl.rules; }
     public float aiGrace() { return lvl.passiveAi ? 1e9f : (lvl.aiGrace >= 0 ? lvl.aiGrace : AI_GRACE); }
     public float rateOf(Planet p) {
-        if (lvl.noProduction) return 0;
-        float r = PRODUCE_BASE + PRODUCE_STEP * (p.level - 1);
-        if (!Faction.isPlayer(p.owner) && lvl.enemyProd > 0) r *= lvl.enemyProd;
-        return r;
+        return rules().productionRate(p, PRODUCE_BASE + PRODUCE_STEP * (p.level - 1));
     }
     public int asteroidDamage(Asteroid a) { float k = a.rad / unit; return Math.max(2, Math.round(k * k * ASTEROID_DMG_K)); }
     public Notice capMsg(Planet p) {
-        if (lvl.noUpgrade) return new Notice(Msg.NO_UPGRADE_IN_LEVEL);
+        Notice blocked = rules().upgradeBlocked();
+        if (blocked != null) return blocked;
         return p.captured ? new Notice(Msg.CAPTURED_MAX_LEVEL, CAPTURED_MAX_LEVEL) : new Notice(Msg.MAX_LEVEL_REACHED);
     }
 
@@ -124,7 +124,7 @@ public final class Engine {
     public void start(Level L) {
         lvl = L;
         Random r = new Random(L.seed);
-        float[][] pts = L.fixed != null ? L.fixed : map.layout(r, L.planets, L.range > 0 ? unit * L.range : 0);
+        float[][] pts = L.fixed != null ? L.fixed : map.layout(r, L.planets, L.rules.rangeFraction() > 0 ? unit * L.rules.rangeFraction() : 0);
         planets.clear();
         for (int i = 0; i < pts.length; i++) {
             Planet p = new Planet();
@@ -155,7 +155,7 @@ public final class Engine {
             else if (side == 1) { x = W + 30 * dp; y = randRange(yMin, yMax); }
             else if (side == 2) { x = randRange(20 * dp, W - 20 * dp); y = -30 * dp; }
             else { x = randRange(20 * dp, W - 20 * dp); y = H + 30 * dp; }
-            Planet tgt = lvl.asteroidHits && !planets.isEmpty() && rnd.nextFloat() < .6f ? planets.get(rnd.nextInt(planets.size())) : null;
+            Planet tgt = rules().asteroidsHitPlanets() && !planets.isEmpty() && rnd.nextFloat() < .6f ? planets.get(rnd.nextInt(planets.size())) : null;
             ang = tgt != null ? (float) Math.atan2(tgt.y - y, tgt.x - x) + randRange(-.25f, .25f)
                               : (float) Math.atan2(H / 2 - y, W / 2 - x) + randRange(-.9f, .9f);
         } else {
@@ -186,9 +186,7 @@ public final class Engine {
     /** Lý do không gửi được theo hạn chế của màn, hoặc null. */
     public Notice blockReason(Planet src, float dx, float dy, boolean feed) {
         if (feed) return null;
-        if (lvl.cooldown > 0 && src.cooldown > 0) return new Notice(Msg.COOLDOWN, (int) Math.ceil(src.cooldown));
-        if (hyp(dx - src.x, dy - src.y) > rangePx()) return new Notice(Msg.OUT_OF_RANGE);
-        return null;
+        return rules().canLaunch(this, src, dx, dy);
     }
 
     public boolean farFrom(ArrayList<Planet> srcs, float dx, float dy) {
@@ -205,7 +203,7 @@ public final class Engine {
         if (count <= 0) return 0;
         if (!feed) {
             if (blockReason(src, dx, dy, false) != null) return 0;
-            if (lvl.cooldown > 0) src.cooldown = lvl.cooldown;
+            rules().onLaunch(src);
         }
         src.rocks -= count;
         float sr = radiusOf(src), aim = (float) Math.atan2(dy - src.y, dx - src.x), spd = unit * ROCK_SPEED;
@@ -258,7 +256,7 @@ public final class Engine {
         Planet p = r.t;
         r.dead = true;
         if (r.owner == p.owner) { if (r.feed) addUpg(p); else p.rocks++; return; }
-        if (Faction.isPlayer(r.owner) && lvl.fog) p.reveal = 3;
+        rules().onHit(p, r.owner);
         if (p.armor > 0 || p.rocks > 0) {                   // trừ giáp trước, hết giáp mới mất đá canh gác
             if (p.armor > 0) p.armor--; else p.rocks--;
             effects.burst(r.x, r.y, Faction.LIGHT[r.owner], 5); effects.burst(r.x, r.y, Faction.LIGHT[p.owner], 3);
@@ -319,7 +317,7 @@ public final class Engine {
             if (a.x < -m) a.x = W + m; else if (a.x > W + m) a.x = -m;
             if (a.y < -m) a.y = H + m; else if (a.y > H + m) a.y = -m;
         }
-        if (lvl.asteroidHits) {
+        if (rules().asteroidsHitPlanets()) {
             for (Asteroid a : neutrals) {
                 if (a.dead) continue;
                 for (Planet p : planets) if (hyp(a.x - p.x, a.y - p.y) < radiusOf(p) + a.rad * .6f) { asteroidHit(a, p); break; }
@@ -358,8 +356,9 @@ public final class Engine {
         for (Planet p : planets) if (Faction.isPlayer(p.owner)) mine++;
         if (mine == 0) { finish(false, EndReason.ALL_PLANETS_LOST); return; }
         if (mine == planets.size()) { finish(true, null); return; }
-        if (lvl.timeLimit > 0 && time >= lvl.timeLimit) { finish(false, EndReason.TIME_UP); return; }
-        if (lvl.noProduction) {
+        int limit = rules().timeLimit();
+        if (limit > 0 && time >= limit) { finish(false, EndReason.TIME_UP); return; }
+        if (rules().finiteRocks()) {
             int t = 0;
             for (Planet p : planets) if (Faction.isPlayer(p.owner)) t += p.rocks;
             for (Rock r : rocks) if (Faction.isPlayer(r.owner)) t++;
