@@ -4,7 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
 
-import com.planetconquest.game.engine.Levels;
+import com.planetconquest.game.engine.level.Levels;
 import com.planetconquest.game.ui.UiButton;
 
 import java.util.ArrayList;

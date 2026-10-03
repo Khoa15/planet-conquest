@@ -3,7 +3,7 @@ package com.planetconquest.game.screen;
 import android.graphics.Canvas;
 
 import com.planetconquest.game.audio.MusicTrack;
-import com.planetconquest.game.engine.Levels;
+import com.planetconquest.game.engine.level.Levels;
 import com.planetconquest.game.session.GameSession;
 import com.planetconquest.game.ui.Dialog;
 import com.planetconquest.game.ui.UiButton;

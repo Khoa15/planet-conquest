@@ -3,8 +3,8 @@ package com.planetconquest.game.session;
 import com.planetconquest.game.data.ProgressStore;
 import com.planetconquest.game.engine.Engine;
 import com.planetconquest.game.engine.GameEvent;
-import com.planetconquest.game.engine.Level;
-import com.planetconquest.game.engine.Levels;
+import com.planetconquest.game.engine.level.Level;
+import com.planetconquest.game.engine.level.Levels;
 
 import java.util.Random;
 

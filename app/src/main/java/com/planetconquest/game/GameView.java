@@ -13,6 +13,7 @@ import com.planetconquest.game.audio.Sfx;
 import com.planetconquest.game.audio.Sound;
 import com.planetconquest.game.data.ProgressStore;
 import com.planetconquest.game.engine.Engine;
+import com.planetconquest.game.engine.input.Pointer;
 import com.planetconquest.game.engine.GameEvent;
 import com.planetconquest.game.engine.Haptic;
 import com.planetconquest.game.screen.Screen;

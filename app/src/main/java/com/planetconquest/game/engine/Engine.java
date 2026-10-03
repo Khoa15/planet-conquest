@@ -1,15 +1,25 @@
 package com.planetconquest.game.engine;
 
+import com.planetconquest.game.engine.ai.AiStrategy;
+import com.planetconquest.game.engine.ai.DefaultAi;
+import com.planetconquest.game.engine.ai.PassiveAi;
+import com.planetconquest.game.engine.fx.Effects;
+import com.planetconquest.game.engine.input.GestureController;
+import com.planetconquest.game.engine.input.Pointer;
+import com.planetconquest.game.engine.level.Level;
+import com.planetconquest.game.engine.level.Levels;
+import com.planetconquest.game.engine.level.MapGenerator;
 import com.planetconquest.game.engine.model.*;
+import com.planetconquest.game.engine.physics.CollisionGrid;
 
 import static com.planetconquest.game.engine.util.MathUtil.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 /**
- * Toàn bộ luật chơi, AI, va chạm và xử lý cử chỉ.
+ * Luật chơi và vòng mô phỏng; điều phối các thành phần: AiStrategy (đối thủ), GestureController (cử chỉ),
+ * CollisionGrid (va chạm), MapGenerator (bản đồ), Effects (hiệu ứng).
  * Java thuần (không import Android) để chạy được cả trên JVM khi kiểm thử (xem app/src/test).
  * Mọi khoảng cách tính theo pixel; hằng số giao diện nhân với dp.
  */
@@ -39,27 +49,41 @@ public final class Engine {
     public final ArrayList<Planet> planets = new ArrayList<Planet>();
     public final ArrayList<Rock> rocks = new ArrayList<Rock>();
     public final ArrayList<Asteroid> neutrals = new ArrayList<Asteroid>();
-    public final ArrayList<Particle> parts = new ArrayList<Particle>();
-    public final ArrayList<FloatText> texts = new ArrayList<FloatText>();
     private final ArrayList<Float> neutTimers = new ArrayList<Float>();
     public float time, clock;
     public boolean over;
     private float lastAttack;
-    public Pointer ptr;
-    public Selection selection;
 
     private final Random rnd = new Random();
+    public final Effects effects = new Effects(rnd);
+    private final GestureController gestures = new GestureController(this);
+    private final CollisionGrid collisions = new CollisionGrid();
+    private MapGenerator map = new MapGenerator(W, H, dp, unit);
+    private AiStrategy ai = new DefaultAi();
     private Listener listener;
-    private final float[] dotX = new float[64], dotY = new float[64];
-    private final ArrayList<Body> ents = new ArrayList<Body>();
-    private int[] head = new int[0], next = new int[64], cellX = new int[64], cellY = new int[64];
 
     public void setListener(Listener l) { listener = l; }
-    private void toast(String s) { if (listener != null) listener.onToast(s); }
-    private void haptic(Haptic k) { if (listener != null) listener.onHaptic(k); }
-    private void event(GameEvent e) { if (listener != null) listener.onEvent(e); }
+    public void toast(String s) { if (listener != null) listener.onToast(s); }
+    public void haptic(Haptic k) { if (listener != null) listener.onHaptic(k); }
+    public void event(GameEvent e) { if (listener != null) listener.onEvent(e); }
 
     float randRange(float a, float b) { return a + rnd.nextFloat() * (b - a); }
+    public float randFloat() { return rnd.nextFloat(); }
+    /** Hoãn cơ chế chống bế tắc thêm một lúc. */
+    public void postponeLull() { lastAttack = time - LULL_SECONDS + 2; }
+
+    // ---------- Cử chỉ (ủy quyền cho GestureController) ----------
+    public Pointer pointer() { return gestures.pointer(); }
+    public Selection selection() { return gestures.selection(); }
+    public void down(float x, float y) { gestures.down(x, y); }
+    public void move(float x, float y) { gestures.move(x, y); }
+    public void up(float x, float y) { gestures.up(x, y); }
+    public void cancelPointer() { gestures.cancelPointer(); }
+    public void cancelSelection() { gestures.cancelSelection(); }
+    /** Gọi trước khi vẽ để có vùng chọn tạm thời khi đang khoanh. */
+    public void updateLive() { gestures.updateLive(); }
+    public int highlightCount(Planet p) { return gestures.highlightCount(p); }
+    public int quickCount(Planet s) { return gestures.quickCount(s); }
 
     // ---------- Luật theo màn ----------
     public float radiusOf(Planet p) { return p.base * (1 + 0.08f * (p.level - 1)); }
@@ -76,9 +100,6 @@ public final class Engine {
         return r;
     }
     public int asteroidDamage(Asteroid a) { float k = a.rad / unit; return Math.max(2, Math.round(k * k * ASTEROID_DMG_K)); }
-    public float mapTop() { return 100 * dp; }
-    public float mapBottom() { return Math.max(mapTop() + 200 * dp, H - 100 * dp); }
-    private float mapY(float ny) { return mapTop() + (mapBottom() - mapTop()) * ny; }
     public String capMsg(Planet p) {
         if (lvl.noUpgrade) return "Màn này không cho nâng cấp";
         return p.captured ? "Hành tinh bị chiếm chỉ lên tối đa cấp " + CAPTURED_MAX_LEVEL : "Đã đạt cấp tối đa";
@@ -93,77 +114,20 @@ public final class Engine {
         W = w; H = h; dp = density;
         unit = Math.min(W, H * 0.6f);
         rockRadius = Math.max(2.4f * dp, unit * 0.0075f);
+        map = new MapGenerator(W, H, dp, unit);
+        effects.setDensity(dp);
         placePlanets();
     }
 
     private void placePlanets() {
-        for (Planet p : planets) { p.x = p.nx * W; p.y = mapY(p.ny); p.base = unit * p.size; }
-    }
-
-    /** Sinh vị trí {nx, ny, size}. Người chơi luôn ở đáy giữa. rangeP > 0: mỗi hành tinh nằm trong tầm của một hành tinh trước đó. */
-    float[][] genLayout(Random r, int n, float rangeP) {
-        float top = mapTop(), bottom = mapBottom();
-        float padX = Math.max(48 * dp, unit * .13f), y0 = top + 22 * dp, y1 = bottom - 6 * dp;
-        float area = (W - 2 * padX) * (y1 - y0);
-        float minD = clamp((float) Math.sqrt(area / n) * .85f, 92 * dp, 170 * dp);
-        if (rangeP > 0) minD = Math.min(minD, rangeP * .55f);
-        float base = n >= 9 ? .056f : n >= 7 ? .062f : .07f;
-        float[] xs = new float[n], ys = new float[n];
-        for (int attempt = 0; attempt < 80; attempt++) {
-            xs[0] = W / 2; ys[0] = y1 - 20 * dp;
-            int cnt = 1;
-            boolean ok = true;
-            for (int i = 1; i < n && ok; i++) {
-                boolean placed = false;
-                for (int t = 0; t < 250 && !placed; t++) {
-                    float x, y;
-                    if (rangeP > 0) {
-                        int b = r.nextInt(cnt);
-                        float a = r.nextFloat() * TAU, d = rangeP * (.6f + r.nextFloat() * .32f);
-                        x = xs[b] + cos(a) * d; y = ys[b] + sin(a) * d;
-                    } else {
-                        x = padX + r.nextFloat() * (W - 2 * padX); y = y0 + r.nextFloat() * (y1 - y0);
-                    }
-                    if (x < padX || x > W - padX || y < y0 || y > y1) continue;
-                    boolean far = true;
-                    for (int k = 0; k < cnt; k++) if (hyp(xs[k] - x, ys[k] - y) < minD) { far = false; break; }
-                    if (far) { xs[cnt] = x; ys[cnt] = y; cnt++; placed = true; }
-                }
-                if (!placed) ok = false;
-            }
-            if (ok && rangeP > 0) {
-                boolean any = false;
-                for (int k = 1; k < n; k++) if (hyp(xs[k] - xs[0], ys[k] - ys[0]) > rangeP * 1.15f) { any = true; break; }
-                if (!any) ok = false;
-            }
-            if (ok) return pack(r, xs, ys, n, base, top, bottom);
-            minD *= .95f;
-        }
-        int cols = n > 6 ? 3 : 2, rows = Math.max(1, (int) Math.ceil((n - 1) / (double) cols));
-        xs[0] = W / 2; ys[0] = y1 - 20 * dp;
-        for (int i = 1; i < n; i++) {
-            int c = (i - 1) % cols, rr = (i - 1) / cols;
-            xs[i] = padX + (c + .5f) / cols * (W - 2 * padX);
-            ys[i] = y0 + (rr + .5f) / rows * (y1 - y0 - 120 * dp);
-        }
-        return pack(r, xs, ys, n, base, top, bottom);
-    }
-
-    private float[][] pack(Random r, float[] xs, float[] ys, int n, float base, float top, float bottom) {
-        float[][] out = new float[n][3];
-        for (int i = 0; i < n; i++) {
-            out[i][0] = xs[i] / W;
-            out[i][1] = (ys[i] - top) / (bottom - top);
-            out[i][2] = i == 0 ? base + .012f : base + r.nextFloat() * .012f;
-        }
-        return out;
+        for (Planet p : planets) { p.x = p.nx * W; p.y = map.y(p.ny); p.base = unit * p.size; }
     }
 
     // ---------- Khởi tạo màn ----------
     public void start(Level L) {
         lvl = L;
         Random r = new Random(L.seed);
-        float[][] pts = L.fixed != null ? L.fixed : genLayout(r, L.planets, L.range > 0 ? unit * L.range : 0);
+        float[][] pts = L.fixed != null ? L.fixed : map.layout(r, L.planets, L.range > 0 ? unit * L.range : 0);
         planets.clear();
         for (int i = 0; i < pts.length; i++) {
             Planet p = new Planet();
@@ -175,8 +139,9 @@ public final class Engine {
             p.seed = randRange(0, TAU);
             planets.add(p);
         }
-        rocks.clear(); neutrals.clear(); neutTimers.clear(); parts.clear(); texts.clear();
-        time = 0; over = false; ptr = null; selection = null;
+        rocks.clear(); neutrals.clear(); neutTimers.clear(); effects.clear();
+        ai = L.passiveAi ? new PassiveAi() : new DefaultAi();
+        time = 0; over = false; gestures.reset();
         lastAttack = aiGrace() + 8;
         placePlanets();
         int nn = L.neutrals >= 0 ? L.neutrals : NEUTRALS;
@@ -237,7 +202,7 @@ public final class Engine {
     }
 
     /** dest == null: bay tới vị trí trống (dx, dy) rồi chờ. Trả về số đá thực sự gửi. */
-    int launch(Planet src, Planet dest, float dx, float dy, int count, boolean feed) {
+    public int launch(Planet src, Planet dest, float dx, float dy, int count, boolean feed) {
         if (dest != null) { dx = dest.x; dy = dest.y; }
         count = Math.min(count, src.rocks);
         if (count <= 0) return 0;
@@ -262,7 +227,7 @@ public final class Engine {
         return count;
     }
 
-    private void redirect(Rock r, Planet dest, float dx, float dy, int i) {
+    public void redirect(Rock r, Planet dest, float dx, float dy, int i) {
         r.idle = false; r.feed = false; r.dist = 0;
         if (dest != null) { r.t = dest; r.hasPt = false; if (dest.owner != r.owner) lastAttack = time; }
         else { r.t = null; spreadPoint(dx, dy, i, r); }
@@ -274,7 +239,7 @@ public final class Engine {
         if (p.upgradeProgress >= upgradeCost(p.level)) {
             p.upgradeProgress = 0; p.level++; p.flash = .8f; p.armor += ARMOR_PER_LEVEL;
             if (Faction.isPlayer(p.owner)) {
-                popText(p.x, p.y - radiusOf(p) - 14 * dp, "Cấp " + p.level + ": +" + fmt1(rateOf(p)) + "/s, chứa " + capOf(p) + ", +" + ARMOR_PER_LEVEL + " máu", 0xFFFFD166);
+                effects.popText(p.x, p.y - radiusOf(p) - 14 * dp, "Cấp " + p.level + ": +" + fmt1(rateOf(p)) + "/s, chứa " + capOf(p) + ", +" + ARMOR_PER_LEVEL + " máu", 0xFFFFD166);
                 haptic(Haptic.LIGHT); event(GameEvent.LEVELUP);
             }
         }
@@ -284,7 +249,7 @@ public final class Engine {
         int old = p.owner;
         p.owner = newO; p.upgradeProgress = 0; p.productionAcc = 0; p.armor = 0; p.rocks = 0; p.flash = 1;
         p.level = 1; p.captured = true;                 // bị chiếm: về cấp 1, từ nay tối đa cấp 4
-        if (Faction.isPlayer(newO) || Faction.isPlayer(old)) popText(p.x, p.y - radiusOf(p) - 14 * dp, Faction.isPlayer(newO) ? "Chiếm được: về cấp 1" : "Bị chiếm", Faction.COLORS[newO]);
+        if (Faction.isPlayer(newO) || Faction.isPlayer(old)) effects.popText(p.x, p.y - radiusOf(p) - 14 * dp, Faction.isPlayer(newO) ? "Chiếm được: về cấp 1" : "Bị chiếm", Faction.COLORS[newO]);
         haptic(Faction.isPlayer(newO) ? Haptic.LIGHT : Haptic.HEAVY);
         if (Faction.isPlayer(newO)) event(GameEvent.CAPTURE);
         boolean alive = false;
@@ -299,7 +264,7 @@ public final class Engine {
         if (Faction.isPlayer(r.owner) && lvl.fog) p.reveal = 3;
         if (p.armor > 0 || p.rocks > 0) {                   // trừ giáp trước, hết giáp mới mất đá canh gác
             if (p.armor > 0) p.armor--; else p.rocks--;
-            burst(r.x, r.y, Faction.LIGHT[r.owner], 5); burst(r.x, r.y, Faction.LIGHT[p.owner], 3);
+            effects.burst(r.x, r.y, Faction.LIGHT[r.owner], 5); effects.burst(r.x, r.y, Faction.LIGHT[p.owner], 3);
         } else {
             capture(p, r.owner); p.rocks = 1;
         }
@@ -309,78 +274,9 @@ public final class Engine {
         a.dead = true; neutTimers.add(randRange(3, 6));
         int dmg = asteroidDamage(a), left = dmg;
         while (left > 0 && (p.armor > 0 || p.rocks > 0)) { if (p.armor > 0) p.armor--; else p.rocks--; left--; }
-        burst(a.x, a.y, 0xFFFFB36B, 8 + Math.round(a.rad / dp)); p.flash = .5f;
-        popText(p.x, p.y - radiusOf(p) - 10 * dp, "-" + dmg, 0xFFFF9B6B);
+        effects.burst(a.x, a.y, 0xFFFFB36B, 8 + Math.round(a.rad / dp)); p.flash = .5f;
+        effects.popText(p.x, p.y - radiusOf(p) - 10 * dp, "-" + dmg, 0xFFFF9B6B);
         if (Faction.isPlayer(p.owner)) haptic(Haptic.HEAVY);
-    }
-
-    // ---------- AI ----------
-    private int incoming(Planet p) {
-        int c = 0;
-        for (Rock r : rocks) if (!r.dead && r.t == p && r.owner != p.owner) c++;
-        return c;
-    }
-
-    private void aiThink(Planet p) {
-        float rp = rangePx();
-        int cap = capOf(p);
-        float full = (float) p.rocks / cap;
-        float pressure = clamp((full - .55f) / .4f, 0, 1);       // kho càng đầy càng liều
-        float bold = p.bold + (.9f - p.bold) * pressure;
-        int threat = incoming(p);
-        int keep = lvl.noProduction ? 3 : 10;
-        int reserve = Math.min(p.rocks, Math.max(0, (int) Math.ceil(threat * 1.15f) - p.armor) + keep);
-        int avail = p.rocks - reserve;
-        for (Planet q : planets) {                                // chi viện đồng minh đang bị đánh
-            if (q == p || q.owner != p.owner) continue;
-            if (hyp(q.x - p.x, q.y - p.y) > rp) continue;
-            int t = incoming(q);
-            if (t > hpOf(q) * .7f && avail >= 8) avail -= launch(p, q, 0, 0, Math.min(avail, (int) Math.ceil(t * .8f)), false);
-        }
-        if (avail < (lvl.noProduction ? 5 : 8)) return;
-        boolean canUp = p.level < maxLvl(p) && threat == 0;
-        int want = upgradeCost(p.level) - p.upgradeProgress;
-        boolean mustAttack = full >= .85f;
-        if (!mustAttack && canUp && avail >= want + 6 && rnd.nextFloat() < (full >= .65f ? .6f : .3f)) { launch(p, p, 0, 0, want, true); return; }
-        Planet best = null, weak = null;
-        float bs = 0;
-        int bestNeed = 0, weakNeed = Integer.MAX_VALUE;
-        for (Planet q : planets) {                                // mọi hành tinh khác phe đều là đối thủ
-            if (q.owner == p.owner) continue;
-            float d = hyp(q.x - p.x, q.y - p.y);
-            if (d > rp) continue;
-            float eta = d / (unit * ROCK_SPEED);
-            int need = (int) Math.ceil((hpOf(q) + rateOf(q) * eta) * bold + 3);
-            if (need < weakNeed) { weakNeed = need; weak = q; }
-            if (avail < need) continue;
-            float s = (1f / (need + 8)) * (1f / (.4f + d / unit));
-            if (s > bs) { bs = s; best = q; bestNeed = need; }
-        }
-        if (best != null) { launch(p, best, 0, 0, Math.min(avail, bestNeed + (int) Math.ceil(bestNeed * .1f)), false); return; }
-        if (canUp && avail >= want + 6) { launch(p, p, 0, 0, want, true); return; }
-        if (mustAttack && weak != null) launch(p, weak, 0, 0, avail, false);
-    }
-
-    /** Chống bế tắc: lâu không ai tấn công thì hành tinh AI nhiều đá dư nhất đánh mục tiêu yếu nhất trong tầm. */
-    private void forceAttack() {
-        float rp = rangePx();
-        int keep = lvl.noProduction ? 3 : 10, minA = lvl.noProduction ? 6 : 12;
-        ArrayList<Planet> src = new ArrayList<Planet>();
-        for (Planet p : planets) if (!Faction.isPlayer(p.owner) && p.rocks - Math.min(p.rocks, keep) >= minA) src.add(p);
-        for (int i = 1; i < src.size(); i++)
-            for (int j = i; j > 0 && src.get(j).rocks > src.get(j - 1).rocks; j--) { Planet t = src.get(j); src.set(j, src.get(j - 1)); src.set(j - 1, t); }
-        for (Planet s : src) {
-            int a = s.rocks - Math.min(s.rocks, keep);
-            Planet tgt = null;
-            int th = Integer.MAX_VALUE;
-            for (Planet q : planets) {
-                if (q.owner == s.owner || hyp(q.x - s.x, q.y - s.y) > rp) continue;
-                int h = hpOf(q);
-                if (h < th) { th = h; tgt = q; }
-            }
-            if (tgt != null && launch(s, tgt, 0, 0, (int) Math.floor(a * .6f), false) > 0) return;
-        }
-        lastAttack = time - LULL_SECONDS + 2;
     }
 
     // ---------- Mô phỏng ----------
@@ -399,10 +295,10 @@ public final class Engine {
             } else p.productionAcc = 0;
             if (!Faction.isPlayer(p.owner) && time >= grace) {
                 p.think -= dt;
-                if (p.think <= 0) { aiThink(p); p.think = randRange(AI_THINK_MIN, AI_THINK_MAX); }
+                if (p.think <= 0) { ai.think(this, p); p.think = randRange(AI_THINK_MIN, AI_THINK_MAX); }
             }
         }
-        if (time >= grace && time - lastAttack > LULL_SECONDS) forceAttack();
+        if (time >= grace && time - lastAttack > LULL_SECONDS) ai.onLull(this);
 
         float rlim = rangePx() * 1.4f;
         for (int i = 0; i < rocks.size(); i++) {
@@ -416,7 +312,7 @@ public final class Engine {
             r.vx += (dx / d * sp - r.vx) * k; r.vy += (dy / d * sp - r.vy) * k;
             r.x += r.vx * dt; r.y += r.vy * dt;
             r.dist += hyp(r.vx, r.vy) * dt;
-            if (!r.feed && r.dist > rlim) { r.dead = true; burst(r.x, r.y, Faction.LIGHT[r.owner], 3); continue; }
+            if (!r.feed && r.dist > rlim) { r.dead = true; effects.burst(r.x, r.y, Faction.LIGHT[r.owner], 3); continue; }
             if (r.t != null) { if (d < radiusOf(r.t) + 3 * dp) arrive(r); }
             else if (d < 3 * dp) { r.idle = true; r.vx = r.vy = 0; }
         }
@@ -432,69 +328,32 @@ public final class Engine {
                 for (Planet p : planets) if (hyp(a.x - p.x, a.y - p.y) < radiusOf(p) + a.rad * .6f) { asteroidHit(a, p); break; }
             }
         }
-        collide();
+        collisions.resolve(rocks, neutrals, W, H, dp, new CollisionGrid.Listener() {
+            @Override public void onCollide(Body a, Body b) { onCollision(a, b); }
+        });
         sweep(rocks);
         sweep(neutrals);
         for (int i = neutTimers.size() - 1; i >= 0; i--) {
             float t = neutTimers.get(i) - dt;
             if (t <= 0) { neutTimers.remove(i); spawnNeutral(true); } else neutTimers.set(i, t);
         }
-        if (selection != null && selection.total() == 0) selection = null;
+        gestures.pruneSelection();
         checkEnd();
+    }
+
+    private void onCollision(Body e, Body f) {
+        float mx = (e.x + f.x) / 2, my = (e.y + f.y) / 2;
+        effects.burst(mx, my, 0xFFFFFFFF, 4);
+        if (e.owner >= 0) effects.burst(mx, my, Faction.LIGHT[e.owner], 3);
+        if (f.owner >= 0) effects.burst(mx, my, Faction.LIGHT[f.owner], 3);
+        if (e.owner == Faction.NEUTRAL) neutTimers.add(randRange(4, 8));
+        if (f.owner == Faction.NEUTRAL) neutTimers.add(randRange(4, 8));
     }
 
     private static <T extends Body> void sweep(ArrayList<T> list) {
         int w = 0;
         for (int i = 0; i < list.size(); i++) { T b = list.get(i); if (!b.dead) list.set(w++, b); }
         while (list.size() > w) list.remove(list.size() - 1);
-    }
-
-    /** Hai vật khác phe chạm nhau: cùng vỡ. Đá cùng phe đi xuyên qua nhau. Lưới ô vuông để chỉ so vật lân cận. */
-    private void collide() {
-        ents.clear();
-        for (Rock r : rocks) if (!r.dead) ents.add(r);
-        for (Asteroid a : neutrals) if (!a.dead) ents.add(a);
-        int count = ents.size();
-        float cs = 16 * dp, off = 100 * dp;
-        int cols = (int) ((W + 2 * off) / cs) + 2, rows = (int) ((H + 2 * off) / cs) + 2;
-        if (head.length < cols * rows) head = new int[cols * rows];
-        Arrays.fill(head, 0, cols * rows, -1);
-        if (next.length < count) { next = new int[count * 2]; cellX = new int[count * 2]; cellY = new int[count * 2]; }
-        for (int i = 0; i < count; i++) {
-            Body e = ents.get(i);
-            int cx = (int) clamp((e.x + off) / cs, 0, cols - 1), cy = (int) clamp((e.y + off) / cs, 0, rows - 1);
-            cellX[i] = cx; cellY[i] = cy;
-            int idx = cy * cols + cx;
-            next[i] = head[idx]; head[idx] = i;
-        }
-        for (int i = 0; i < count; i++) {
-            Body e = ents.get(i);
-            if (e.dead) continue;
-            for (int ox = -1; ox <= 1; ox++) {
-                int cx = cellX[i] + ox;
-                if (cx < 0 || cx >= cols) continue;
-                for (int oy = -1; oy <= 1; oy++) {
-                    int cy = cellY[i] + oy;
-                    if (cy < 0 || cy >= rows) continue;
-                    for (int j = head[cy * cols + cx]; j != -1; j = next[j]) {
-                        if (j <= i || e.dead) continue;
-                        Body f = ents.get(j);
-                        if (f.dead) continue;
-                        if (e.owner == f.owner && e.owner != Faction.NEUTRAL) continue;
-                        float dx = e.x - f.x, dy = e.y - f.y, rr = e.rad + f.rad;
-                        if (dx * dx + dy * dy < rr * rr) {
-                            e.dead = true; f.dead = true;
-                            float mx = (e.x + f.x) / 2, my = (e.y + f.y) / 2;
-                            burst(mx, my, 0xFFFFFFFF, 4);
-                            if (e.owner >= 0) burst(mx, my, Faction.LIGHT[e.owner], 3);
-                            if (f.owner >= 0) burst(mx, my, Faction.LIGHT[f.owner], 3);
-                            if (e.owner == Faction.NEUTRAL) neutTimers.add(randRange(4, 8));
-                            if (f.owner == Faction.NEUTRAL) neutTimers.add(randRange(4, 8));
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private void checkEnd() {
@@ -512,43 +371,14 @@ public final class Engine {
     }
 
     private void finish(boolean win, String reason) {
-        over = true; ptr = null; selection = null;
+        over = true; gestures.reset();
         if (listener != null) listener.onFinish(win, reason);
-    }
-
-    // ---------- Hiệu ứng ----------
-    private void burst(float x, float y, int color, int n) {
-        if (parts.size() > 420) return;
-        for (int i = 0; i < n; i++) {
-            float a = randRange(0, TAU), s = randRange(20, 90) * dp;
-            Particle q = new Particle();
-            q.x = x; q.y = y; q.vx = cos(a) * s; q.vy = sin(a) * s;
-            q.life = randRange(.25f, .55f); q.max = .55f; q.color = color; q.size = randRange(1, 2.2f) * dp;
-            parts.add(q);
-        }
-    }
-
-    private void popText(float x, float y, String s, int color) {
-        FloatText t = new FloatText();
-        t.x = x; t.y = y; t.text = s; t.color = color; t.life = 1.6f;
-        texts.add(t);
     }
 
     /** Cập nhật hiệu ứng và đồng hồ hình ảnh. Không gọi khi tạm dừng: mọi thứ đứng yên thật sự. */
     public void fx(float dt) {
         clock += dt;
-        for (int i = parts.size() - 1; i >= 0; i--) {
-            Particle q = parts.get(i);
-            q.life -= dt;
-            if (q.life <= 0) { parts.remove(i); continue; }
-            q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= .94f; q.vy *= .94f;
-        }
-        for (int i = texts.size() - 1; i >= 0; i--) {
-            FloatText t = texts.get(i);
-            t.life -= dt;
-            if (t.life <= 0) { texts.remove(i); continue; }
-            t.y -= 22 * dp * dt;
-        }
+        effects.update(dt);
         for (Planet p : planets) {
             p.flash = Math.max(0, p.flash - dt * 1.4f);
             if (p.reveal > 0) p.reveal = Math.max(0, p.reveal - dt);
@@ -577,192 +407,6 @@ public final class Engine {
         int dc = Math.min(p.rocks, 60), idx = 0, ring = 0;
         while (idx < dc && ring < radii.length) { radii[ring] = R + first + ring * gap; idx += Math.min(10 + ring * 6, dc - idx); ring++; }
         return ring;
-    }
-
-    // ---------- Vòng khoanh ----------
-    public Selection computeSelection(float[] xs, float[] ys, int n) {
-        Selection s = new Selection();
-        if (n >= 3) {
-            for (Planet p : planets) {
-                if (!Faction.isPlayer(p.owner) || p.rocks <= 0) continue;
-                int dc = orbitDots(p, dotX, dotY), ic = 0;
-                for (int i = 0; i < dc; i++) if (inPoly(dotX[i], dotY[i], xs, ys, n)) ic++;
-                if (ic > 0) s.addGroup(p, Math.min(p.rocks, ic >= dc ? p.rocks : Math.max(1, Math.round((float) ic / dc * p.rocks))));
-            }
-            for (Rock r : rocks) if (!r.dead && Faction.isPlayer(r.owner) && !r.feed && inPoly(r.x, r.y, xs, ys, n)) s.loose.add(r);
-        }
-        s.xs = Arrays.copyOf(xs, n); s.ys = Arrays.copyOf(ys, n); s.n = n;
-        float cx = 0, cy = 0;
-        for (int i = 0; i < n; i++) { cx += xs[i]; cy += ys[i]; }
-        s.cx = n > 0 ? cx / n : 0; s.cy = n > 0 ? cy / n : 0;
-        return s;
-    }
-
-    /** Số viên đá quỹ đạo của p cần sáng lên vì đang được chọn. */
-    public int highlightCount(Planet p) {
-        Selection s = ptr != null && ptr.mode == GestureMode.LASSO ? ptr.live : selection;
-        if (s == null || p.rocks <= 0) return 0;
-        int c = s.countFor(p);
-        if (c == 0) return 0;
-        return Math.round(Math.min(c, p.rocks) / (float) p.rocks * Math.min(p.rocks, 60));
-    }
-
-    // ---------- Cử chỉ một ngón tay ----------
-    public static final class Pointer {
-        public float sx, sy, x, y, len, lockX, lockY;
-        public Planet startPlanet, hover;
-        public GestureMode mode = GestureMode.UNDECIDED;
-        public final ArrayList<Planet> qsel = new ArrayList<Planet>();
-        public float[] px = new float[256], py = new float[256];
-        public int pn;
-        public Selection live;
-
-        void add(float x, float y) {
-            if (pn == px.length) { px = Arrays.copyOf(px, pn * 2); py = Arrays.copyOf(py, pn * 2); }
-            px[pn] = x; py[pn] = y; pn++;
-        }
-    }
-
-    public Planet hit(float x, float y) {
-        Planet best = null;
-        float bd = Float.MAX_VALUE, slop = Math.max(22 * dp, unit * .05f);
-        for (Planet p : planets) {
-            float d = hyp(p.x - x, p.y - y);
-            if (d <= radiusOf(p) + slop && d < bd) { best = p; bd = d; }
-        }
-        return best;
-    }
-
-    public int quickCount(Planet s) { return s.rocks >= 1 ? Math.max(1, (int) Math.floor(s.rocks * QUICK_SEND)) : 0; }
-
-    public void down(float x, float y) {
-        if (over) return;
-        ptr = new Pointer();
-        ptr.sx = ptr.x = x; ptr.sy = ptr.y = y;
-        ptr.startPlanet = ptr.hover = hit(x, y);
-        ptr.add(x, y);
-    }
-
-    public void move(float x, float y) {
-        if (ptr == null) return;
-        ptr.x = x; ptr.y = y; ptr.hover = hit(x, y);
-        if (ptr.mode == GestureMode.UNDECIDED && hyp(x - ptr.sx, y - ptr.sy) > 12 * dp) {
-            if (ptr.startPlanet != null && Faction.isPlayer(ptr.startPlanet.owner)) { ptr.mode = GestureMode.QUICK; ptr.qsel.add(ptr.startPlanet); selection = null; }
-            else if (ptr.startPlanet == null) ptr.mode = GestureMode.LASSO;
-            else ptr.mode = GestureMode.IGNORE;
-        }
-        if (ptr.mode == GestureMode.QUICK) {
-            Planet h = ptr.hover;
-            if (h != null && Faction.isPlayer(h.owner) && !ptr.qsel.contains(h)) ptr.qsel.add(h);   // kéo qua nhiều hành tinh = chọn thêm
-        } else if (ptr.mode == GestureMode.LASSO) {
-            float d = hyp(x - ptr.px[ptr.pn - 1], y - ptr.py[ptr.pn - 1]);
-            if (d > 5 * dp) { ptr.add(x, y); ptr.len += d; }
-            if (lassoClosed(ptr)) tryLock();                                        // khép vòng: khóa vùng chọn, tay tiếp tục kéo tới đích
-        }
-    }
-
-    public void up(float x, float y) {
-        if (ptr == null) return;
-        Pointer p = ptr;
-        ptr = null;
-        if (over) return;
-        Planet h = hit(x, y);
-        if (p.mode == GestureMode.UNDECIDED) {
-            if (selection != null) dispatch(selection, h, x, y);
-            else if (h != null && Faction.isPlayer(h.owner)) upgradeTap(h);
-        } else if (p.mode == GestureMode.QUICK) quickSend(p.qsel, h, x, y);
-        else if (p.mode == GestureMode.LASSO) finishLasso(p);
-        else if (p.mode == GestureMode.CARRY) { if (hyp(x - p.lockX, y - p.lockY) > 36 * dp) dispatch(selection, h, x, y); }
-    }
-
-    public void cancelPointer() { ptr = null; }
-    public void cancelSelection() { selection = null; }
-
-    /** Gọi trước khi vẽ để có vùng chọn tạm thời khi đang khoanh. */
-    public void updateLive() {
-        if (ptr != null && ptr.mode == GestureMode.LASSO) ptr.live = ptr.pn >= 3 ? computeSelection(ptr.px, ptr.py, ptr.pn) : null;
-    }
-
-    private boolean lassoClosed(Pointer p) {
-        if (p.pn < 10 || p.len < 110 * dp || bboxMin(p.px, p.py, p.pn) < 36 * dp) return false;
-        return hyp(p.x - p.px[0], p.y - p.py[0]) < Math.max(26 * dp, p.len * .1f);
-    }
-
-    private void tryLock() {
-        Selection s = computeSelection(ptr.px, ptr.py, ptr.pn);
-        if (s.total() > 0) {
-            selection = s; haptic(Haptic.LIGHT); event(GameEvent.LASSO);
-            ptr.mode = GestureMode.CARRY; ptr.lockX = ptr.x; ptr.lockY = ptr.y;
-        } else {
-            toast("Vòng khoanh chưa có đá");
-            ptr.pn = 0; ptr.add(ptr.x, ptr.y); ptr.len = 0;
-        }
-    }
-
-    private void finishLasso(Pointer p) {
-        if (p.len < 90 * dp || bboxMin(p.px, p.py, p.pn) < 28 * dp) { toast("Khoanh vòng quanh đá để chọn"); return; }
-        Selection s = computeSelection(p.px, p.py, p.pn);
-        if (s.total() > 0) { selection = s; haptic(Haptic.LIGHT); event(GameEvent.LASSO); }
-        else toast("Vòng khoanh chưa có đá");
-    }
-
-    private void upgradeTap(Planet p) {
-        if (p.level >= maxLvl(p)) { toast(capMsg(p)); return; }
-        int c = Math.min(upgradeCost(p.level) - p.upgradeProgress, p.rocks);
-        if (c < 1) { toast("Hành tinh hết đá"); return; }
-        if (launch(p, p, 0, 0, c, true) > 0) event(GameEvent.UPGRADE);
-    }
-
-    /** Điểm đến của một lệnh điều quân: tâm hành tinh nếu thả lên hành tinh, ngược lại là điểm chạm (kẹp trong khung). */
-    private float targetX(Planet h, float x) { return h != null ? h.x : clamp(x, 14 * dp, W - 14 * dp); }
-    private float targetY(Planet h, float y) { return h != null ? h.y : clamp(y, 70 * dp, H - 70 * dp); }
-
-    /** Loại sự kiện của lệnh điều quân tới h: điểm trống, chuyển quân nội bộ hay tấn công. */
-    private static GameEvent moveEvent(Planet h) {
-        return h == null ? GameEvent.POINT : (Faction.isPlayer(h.owner) ? GameEvent.MOVE : GameEvent.ATTACK);
-    }
-
-    private void quickSend(ArrayList<Planet> qsel, Planet h, float x, float y) {
-        selection = null;
-        if (h != null && qsel.size() == 1 && h == qsel.get(0)) return;           // kéo về chính nó: hủy
-        float dx = targetX(h, x), dy = targetY(h, y);
-        int any = 0;
-        String reason = null;
-        for (Planet s : qsel) {
-            if (s == h) continue;
-            String why = blockReason(s, dx, dy, false);
-            if (why != null) { reason = why; continue; }
-            int c = quickCount(s);
-            if (c > 0 && launch(s, h, dx, dy, c, false) > 0) any++;
-        }
-        if (any == 0) toast(reason != null ? reason : "Hết đá để gửi");
-        else event(moveEvent(h));
-    }
-
-    private void dispatch(Selection sel, Planet h, float x, float y) {
-        selection = null;
-        float dx = targetX(h, x), dy = targetY(h, y);
-        String reason = null;
-        boolean sent = false, fed = false;
-        for (int i = 0; i < sel.planets.size(); i++) {
-            Planet p = sel.planets.get(i);
-            if (!Faction.isPlayer(p.owner) || p.rocks <= 0) continue;
-            int c = Math.min(sel.counts[i], p.rocks);
-            if (c <= 0) continue;
-            if (h != null && h == p) {                                           // thả lại chính hành tinh nguồn: nạp nâng cấp
-                if (p.level >= maxLvl(p)) { toast(capMsg(p)); continue; }
-                if (launch(p, p, 0, 0, c, true) > 0) fed = true;
-            } else {
-                String why = blockReason(p, dx, dy, false);
-                if (why != null) { reason = why; continue; }
-                if (launch(p, h, dx, dy, c, false) > 0) sent = true;
-            }
-        }
-        int li = 0;
-        for (Rock r : sel.loose) if (!r.dead && Faction.isPlayer(r.owner)) { redirect(r, h, dx, dy, li++); sent = true; }
-        if (reason != null) toast(reason);
-        if (fed) event(GameEvent.UPGRADE);
-        if (sent) event(moveEvent(h));
     }
 
     // ---------- Truy vấn cho HUD ----------

@@ -8,8 +8,9 @@ import android.graphics.Path;
 import android.graphics.Paint;
 
 import com.planetconquest.game.engine.Engine;
-import com.planetconquest.game.engine.GestureMode;
-import com.planetconquest.game.engine.Level;
+import com.planetconquest.game.engine.input.Pointer;
+import com.planetconquest.game.engine.input.GestureMode;
+import com.planetconquest.game.engine.level.Level;
 import com.planetconquest.game.engine.model.Asteroid;
 import com.planetconquest.game.engine.model.Faction;
 import com.planetconquest.game.engine.model.FloatText;
@@ -42,14 +43,14 @@ public final class WorldRenderer extends Painter {
     }
 
     private void drawIntroCue(Canvas c) {
-        if (!eng.lvl.intro || session.introStep() >= GameSession.INTRO_STEPS.length || eng.ptr != null || eng.planets.size() < 2) return;
+        if (!eng.lvl.intro || session.introStep() >= GameSession.INTRO_STEPS.length || eng.pointer() != null || eng.planets.size() < 2) return;
         Planet me = eng.planets.get(0), en = eng.planets.get(1);
         float pulse = .5f + .5f * sin(eng.clock * 4);
         stroke.setColor(alpha(C_GOLD, .55f + .35f * pulse));
         stroke.setStrokeWidth(2.5f * dp);
         switch (session.introStep()) {
             case 0: case 4: {
-                if (session.introStep() == 4 && eng.selection != null) break;
+                if (session.introStep() == 4 && eng.selection() != null) break;
                 dashed(true, eng.clock);
                 float r1 = eng.radiusOf(me) + 12 * dp, r2 = eng.radiusOf(en) + 14 * dp, d = (float) Math.hypot(en.x - me.x, en.y - me.y);
                 float ux = (en.x - me.x) / d, uy = (en.y - me.y) / d;
@@ -58,7 +59,7 @@ public final class WorldRenderer extends Painter {
                 break;
             }
             case 1: {
-                if (eng.selection != null) break;
+                if (eng.selection() != null) break;
                 int nr = eng.orbitRings(me, rings);
                 float rad = (nr > 0 ? rings[nr - 1] : eng.radiusOf(me)) + 16 * dp;
                 dashed(true, eng.clock);
@@ -86,7 +87,7 @@ public final class WorldRenderer extends Painter {
         if (L.range > 0) { tmpPlanets.clear(); for (Planet p : eng.planets) if (Faction.isPlayer(p.owner)) tmpPlanets.add(p); drawRange(c, tmpPlanets, .16f); }
         for (Planet p : eng.planets) drawPlanet(c, p);
         for (Planet p : eng.planets) drawOrbit(c, p);
-        if (playing && !L.intro && eng.time < 10 && eng.ptr == null && eng.selection == null && !eng.planets.isEmpty()) {
+        if (playing && !L.intro && eng.time < 10 && eng.pointer() == null && eng.selection() == null && !eng.planets.isEmpty()) {
             Planet p = eng.planets.get(0);
             stroke.setColor(alpha(C_YOU, .8f)); stroke.setStrokeWidth(2 * dp);
             dashed(true, eng.clock * .3f);
@@ -96,12 +97,12 @@ public final class WorldRenderer extends Painter {
         if (playing) drawIntroCue(c);
         drawNeutrals(c);
         drawRocks(c);
-        for (Particle q : eng.parts) {
+        for (Particle q : eng.effects.parts) {
             fill.setColor(alpha(q.color, Math.max(0, q.life / q.max)));
             c.drawCircle(q.x, q.y, q.size, fill);
         }
         if (playing) { drawDrag(c); drawSel(c); }
-        for (FloatText t : eng.texts) {
+        for (FloatText t : eng.effects.texts) {
             float a = Math.min(1, t.life);
             text(c, t.text, t.x + dp, t.y + dp, 14 * dp, alpha(0xFF000000, .6f * a), tfBold, Paint.Align.CENTER);
             text(c, t.text, t.x, t.y, 14 * dp, alpha(t.color, a), tfBold, Paint.Align.CENTER);
@@ -223,7 +224,7 @@ public final class WorldRenderer extends Painter {
 
     // Kéo thẳng từ hành tinh (gửi nửa số đá)
     private void drawDrag(Canvas c) {
-        Engine.Pointer pt = eng.ptr;
+        Pointer pt = eng.pointer();
         if (pt == null || pt.mode != GestureMode.QUICK) return;
         ArrayList<Planet> sel = pt.qsel;
         Planet h = pt.hover;
@@ -259,7 +260,7 @@ public final class WorldRenderer extends Painter {
 
     // Vòng khoanh, vùng chọn đã khóa và đường kéo tới đích
     private void drawSel(Canvas c) {
-        Engine.Pointer pt = eng.ptr;
+        Pointer pt = eng.pointer();
         boolean drawing = pt != null && pt.mode == GestureMode.LASSO;
         if (drawing && pt.pn > 1) {
             path.reset();
@@ -280,7 +281,7 @@ public final class WorldRenderer extends Painter {
                 if (tot > 0) pill(c, pt.x, pt.y - 44 * dp, tot + " đá", C_YOU);
             }
         }
-        Selection sel = eng.selection;
+        Selection sel = eng.selection();
         if (sel == null || drawing || sel.n < 3) return;
         path.reset();
         path.moveTo(sel.xs[0], sel.ys[0]);

@@ -4,8 +4,8 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 
 import com.planetconquest.game.audio.MusicTrack;
-import com.planetconquest.game.engine.GestureMode;
-import com.planetconquest.game.engine.Level;
+import com.planetconquest.game.engine.input.GestureMode;
+import com.planetconquest.game.engine.level.Level;
 import com.planetconquest.game.engine.model.Selection;
 import com.planetconquest.game.session.GameSession;
 import com.planetconquest.game.ui.UiButton;
@@ -101,8 +101,8 @@ public final class PlayScreen extends BaseScreen {
         if (L.intro && session.introStep() < GameSession.INTRO_STEPS.length) hudBottom = drawCoach(c, hudBottom + 8 * dp);
 
         // Thanh vùng chọn: số đá đã chọn + nút Hủy (vùng ngón cái)
-        Selection s = eng.selection;
-        boolean show = active && s != null && (eng.ptr == null || eng.ptr.mode != GestureMode.CARRY);
+        Selection s = eng.selection();
+        boolean show = active && s != null && (eng.pointer() == null || eng.pointer().mode != GestureMode.CARRY);
         if (cancelSelBtn != null) cancelSelBtn.visible = show;
         if (show) {
             String msg = "Đã chọn " + s.total() + " đá. Chạm đích để điều động";

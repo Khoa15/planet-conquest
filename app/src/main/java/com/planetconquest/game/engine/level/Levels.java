@@ -1,4 +1,4 @@
-package com.planetconquest.game.engine;
+package com.planetconquest.game.engine.level;
 
 import com.planetconquest.game.engine.model.*;
 import com.planetconquest.game.engine.util.MathUtil;

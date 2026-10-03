@@ -1,5 +1,6 @@
 package com.planetconquest.game.engine;
 
+import com.planetconquest.game.engine.level.*;
 import com.planetconquest.game.engine.model.*;
 
 import org.junit.Test;
@@ -16,7 +17,7 @@ public class TutorialTest extends EngineTestBase {
         drag(me(), enemy.x, enemy.y); secs(2);
         assertTrue("bước 1", events.contains(GameEvent.ATTACK) && enemy.owner == 1);
         circle(me().x, me().y, 70 * e.dp); e.up(me().x + 70 * e.dp, me().y);
-        assertTrue("bước 2", events.contains(GameEvent.LASSO) && e.selection != null);
+        assertTrue("bước 2", events.contains(GameEvent.LASSO) && e.selection() != null);
         tap(e.W / 2, e.H * .55f); secs(2);
         int idle = 0; for (Rock r : e.rocks) if (r.idle && r.owner == 0) idle++;
         assertTrue("bước 3", events.contains(GameEvent.POINT) && idle > 0);
