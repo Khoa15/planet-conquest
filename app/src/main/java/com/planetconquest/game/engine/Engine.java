@@ -16,6 +16,8 @@ import com.planetconquest.game.engine.rules.RuleSet;
 import static com.planetconquest.game.engine.util.MathUtil.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -47,9 +49,12 @@ public final class Engine {
     // ---------- Trạng thái ----------
     public float W = 360, H = 640, dp = 1, unit = 360, rockRadius = 2.8f;
     public Level lvl = Levels.ALL[0];
-    public final ArrayList<Planet> planets = new ArrayList<Planet>();
-    public final ArrayList<Rock> rocks = new ArrayList<Rock>();
-    public final ArrayList<Asteroid> neutrals = new ArrayList<Asteroid>();
+    final ArrayList<Planet> planets = new ArrayList<Planet>();
+    final ArrayList<Rock> rocks = new ArrayList<Rock>();
+    final ArrayList<Asteroid> neutrals = new ArrayList<Asteroid>();
+    private final List<Planet> planetsView = Collections.unmodifiableList(planets);
+    private final List<Rock> rocksView = Collections.unmodifiableList(rocks);
+    private final List<Asteroid> neutralsView = Collections.unmodifiableList(neutrals);
     private final ArrayList<Float> neutTimers = new ArrayList<Float>();
     public float time, clock;
     public boolean over;
@@ -74,6 +79,11 @@ public final class Engine {
     /** Hoãn cơ chế chống bế tắc thêm một lúc. */
     public void postponeLull() { lastAttack = time - LULL_SECONDS + 2; }
 
+    // Truy cập chỉ đọc cho giao diện, AI và cử chỉ; chỉ Engine (và kiểm thử cùng package) được sửa trạng thái.
+    public List<Planet> planets() { return planetsView; }
+    public List<Rock> rocks() { return rocksView; }
+    public List<Asteroid> neutrals() { return neutralsView; }
+
     // ---------- Cử chỉ (ủy quyền cho GestureController) ----------
     public Pointer pointer() { return gestures.pointer(); }
     public Selection selection() { return gestures.selection(); }
@@ -88,10 +98,8 @@ public final class Engine {
     public int quickCount(Planet s) { return gestures.quickCount(s); }
 
     // ---------- Luật theo màn ----------
-    public float radiusOf(Planet p) { return p.base * (1 + 0.08f * (p.level - 1)); }
     public int maxLvl(Planet p) { return rules().maxLevel(p, p.captured ? CAPTURED_MAX_LEVEL : MAX_LEVEL); }
     public int capOf(Planet p) { return rules().capacity(p, capacity(p.level)); }
-    public int hpOf(Planet p) { return p.rocks + p.armor; }                  // máu = số đá + giáp
     public boolean fogged(Planet p) { return rules().hidesInfo(p); }
     public float rangePx() { float f = rules().rangeFraction(); return f > 0 ? unit * f : Float.POSITIVE_INFINITY; }
     public RuleSet rules() { return lvl.rules; }
@@ -131,8 +139,8 @@ public final class Engine {
             p.id = i; p.nx = pts[i][0]; p.ny = pts[i][1]; p.size = pts[i][2]; p.owner = i;
             p.rocks = i == 0 ? L.playerN : Math.round(L.enemyMin + r.nextFloat() * (L.enemyMax - L.enemyMin));
             if (i > 0) p.armor = L.enemyArmor;
-            p.bold = i == 0 ? 0 : clamp(1f + r.nextFloat() * .4f + L.boldShift, .85f, 1.5f);
-            p.think = aiGrace() + randRange(0, 3);
+            p.ai.bold = i == 0 ? 0 : clamp(1f + r.nextFloat() * .4f + L.boldShift, .85f, 1.5f);
+            p.ai.think = aiGrace() + randRange(0, 3);
             p.seed = randRange(0, TAU);
             planets.add(p);
         }
@@ -162,7 +170,7 @@ public final class Engine {
             for (int t = 0; t < 30; t++) {
                 x = randRange(24 * dp, W - 24 * dp); y = randRange(110 * dp, H - 130 * dp);
                 boolean ok = true;
-                for (Planet p : planets) if (hyp(p.x - x, p.y - y) <= radiusOf(p) + 46 * dp) { ok = false; break; }
+                for (Planet p : planets) if (hyp(p.x - x, p.y - y) <= p.radius() + 46 * dp) { ok = false; break; }
                 if (ok) break;
             }
             ang = randRange(0, TAU);
@@ -180,7 +188,6 @@ public final class Engine {
         float sp = rockRadius * 2.8f, rad = sp * (float) Math.sqrt(i + .5f), a = i * 2.39996f;
         out.ptx = clamp(cx + cos(a) * rad, 12 * dp, W - 12 * dp);
         out.pty = clamp(cy + sin(a) * rad, 70 * dp, H - 70 * dp);
-        out.hasPt = true;
     }
 
     /** Lý do không gửi được theo hạn chế của màn, hoặc null. */
@@ -206,7 +213,7 @@ public final class Engine {
             rules().onLaunch(src);
         }
         src.rocks -= count;
-        float sr = radiusOf(src), aim = (float) Math.atan2(dy - src.y, dx - src.x), spd = unit * ROCK_SPEED;
+        float sr = src.radius(), aim = (float) Math.atan2(dy - src.y, dx - src.x), spd = unit * ROCK_SPEED;
         if (dest != null && !feed && dest.owner != src.owner) lastAttack = time;
         for (int i = 0; i < count; i++) {
             float a = feed ? randRange(0, TAU) : aim + randRange(-.8f, .8f);
@@ -224,7 +231,7 @@ public final class Engine {
 
     public void redirect(Rock r, Planet dest, float dx, float dy, int i) {
         r.idle = false; r.feed = false; r.dist = 0;
-        if (dest != null) { r.t = dest; r.hasPt = false; if (dest.owner != r.owner) lastAttack = time; }
+        if (dest != null) { r.t = dest; if (dest.owner != r.owner) lastAttack = time; }
         else { r.t = null; spreadPoint(dx, dy, i, r); }
     }
 
@@ -234,7 +241,7 @@ public final class Engine {
         if (p.upgradeProgress >= upgradeCost(p.level)) {
             p.upgradeProgress = 0; p.level++; p.flash = .8f; p.armor += ARMOR_PER_LEVEL;
             if (Faction.isPlayer(p.owner)) {
-                effects.popText(p.x, p.y - radiusOf(p) - 14 * dp, new Notice(Msg.PLANET_LEVEL_UP, p.level, rateOf(p), capOf(p), ARMOR_PER_LEVEL), 0xFFFFD166);
+                effects.popText(p.x, p.y - p.radius() - 14 * dp, new Notice(Msg.PLANET_LEVEL_UP, p.level, rateOf(p), capOf(p), ARMOR_PER_LEVEL), 0xFFFFD166);
                 haptic(Haptic.LIGHT); event(GameEvent.LEVELUP);
             }
         }
@@ -244,7 +251,7 @@ public final class Engine {
         int old = p.owner;
         p.owner = newO; p.upgradeProgress = 0; p.productionAcc = 0; p.armor = 0; p.rocks = 0; p.flash = 1;
         p.level = 1; p.captured = true;                 // bị chiếm: về cấp 1, từ nay tối đa cấp 4
-        if (Faction.isPlayer(newO) || Faction.isPlayer(old)) effects.popText(p.x, p.y - radiusOf(p) - 14 * dp, new Notice(Faction.isPlayer(newO) ? Msg.PLANET_CAPTURED : Msg.PLANET_LOST), Faction.COLORS[newO]);
+        if (Faction.isPlayer(newO) || Faction.isPlayer(old)) effects.popText(p.x, p.y - p.radius() - 14 * dp, new Notice(Faction.isPlayer(newO) ? Msg.PLANET_CAPTURED : Msg.PLANET_LOST), Faction.COLORS[newO]);
         haptic(Faction.isPlayer(newO) ? Haptic.LIGHT : Haptic.HEAVY);
         if (Faction.isPlayer(newO)) event(GameEvent.CAPTURE);
         boolean alive = false;
@@ -257,8 +264,7 @@ public final class Engine {
         r.dead = true;
         if (r.owner == p.owner) { if (r.feed) addUpg(p); else p.rocks++; return; }
         rules().onHit(p, r.owner);
-        if (p.armor > 0 || p.rocks > 0) {                   // trừ giáp trước, hết giáp mới mất đá canh gác
-            if (p.armor > 0) p.armor--; else p.rocks--;
+        if (p.takeHit()) {                                  // trừ giáp trước, hết giáp mới mất đá canh gác
             effects.burst(r.x, r.y, Faction.LIGHT[r.owner], 5); effects.burst(r.x, r.y, Faction.LIGHT[p.owner], 3);
         } else {
             capture(p, r.owner); p.rocks = 1;
@@ -268,9 +274,9 @@ public final class Engine {
     private void asteroidHit(Asteroid a, Planet p) {
         a.dead = true; neutTimers.add(randRange(3, 6));
         int dmg = asteroidDamage(a), left = dmg;
-        while (left > 0 && (p.armor > 0 || p.rocks > 0)) { if (p.armor > 0) p.armor--; else p.rocks--; left--; }
+        while (left > 0 && p.takeHit()) left--;
         effects.burst(a.x, a.y, 0xFFFFB36B, 8 + Math.round(a.rad / dp)); p.flash = .5f;
-        effects.popText(p.x, p.y - radiusOf(p) - 10 * dp, new Notice(Msg.ASTEROID_DAMAGE, dmg), 0xFFFF9B6B);
+        effects.popText(p.x, p.y - p.radius() - 10 * dp, new Notice(Msg.ASTEROID_DAMAGE, dmg), 0xFFFF9B6B);
         if (Faction.isPlayer(p.owner)) haptic(Haptic.HEAVY);
     }
 
@@ -289,8 +295,8 @@ public final class Engine {
                 while (p.productionAcc >= 1) { p.productionAcc -= 1; p.rocks++; if (p.rocks >= cap) { p.productionAcc = 0; break; } }
             } else p.productionAcc = 0;
             if (!Faction.isPlayer(p.owner) && time >= grace) {
-                p.think -= dt;
-                if (p.think <= 0) { ai.think(this, p); p.think = randRange(AI_THINK_MIN, AI_THINK_MAX); }
+                p.ai.think -= dt;
+                if (p.ai.think <= 0) { ai.think(this, p); p.ai.think = randRange(AI_THINK_MIN, AI_THINK_MAX); }
             }
         }
         if (time >= grace && time - lastAttack > LULL_SECONDS) ai.onLull(this);
@@ -299,7 +305,7 @@ public final class Engine {
         for (int i = 0; i < rocks.size(); i++) {
             Rock r = rocks.get(i);
             if (r.dead || r.idle) continue;
-            float tx = r.t != null ? r.t.x : r.ptx, ty = r.t != null ? r.t.y : r.pty;
+            float tx = r.targetX(), ty = r.targetY();
             float dx = tx - r.x, dy = ty - r.y, d = hyp(dx, dy);
             if (d == 0) d = 1;
             float sp = r.t != null ? r.s : Math.min(r.s, d * 5);       // tới gần vị trí trống thì giảm tốc
@@ -308,7 +314,7 @@ public final class Engine {
             r.x += r.vx * dt; r.y += r.vy * dt;
             r.dist += hyp(r.vx, r.vy) * dt;
             if (!r.feed && r.dist > rlim) { r.dead = true; effects.burst(r.x, r.y, Faction.LIGHT[r.owner], 3); continue; }
-            if (r.t != null) { if (d < radiusOf(r.t) + 3 * dp) arrive(r); }
+            if (r.t != null) { if (d < r.t.radius() + 3 * dp) arrive(r); }
             else if (d < 3 * dp) { r.idle = true; r.vx = r.vy = 0; }
         }
         float m = 40 * dp;
@@ -320,7 +326,7 @@ public final class Engine {
         if (rules().asteroidsHitPlanets()) {
             for (Asteroid a : neutrals) {
                 if (a.dead) continue;
-                for (Planet p : planets) if (hyp(a.x - p.x, a.y - p.y) < radiusOf(p) + a.rad * .6f) { asteroidHit(a, p); break; }
+                for (Planet p : planets) if (hyp(a.x - p.x, a.y - p.y) < p.radius() + a.rad * .6f) { asteroidHit(a, p); break; }
             }
         }
         collisions.resolve(rocks, neutrals, W, H, dp, new CollisionGrid.Listener() {
@@ -384,7 +390,7 @@ public final class Engine {
     // ---------- Quỹ đạo ----------
     /** Vị trí các viên đá đang quay quanh hành tinh (tối đa 60). Dùng chung cho vẽ và cho vòng khoanh. */
     public int orbitDots(Planet p, float[] ox, float[] oy) {
-        float R = radiusOf(p), gap = Math.max(6 * dp, unit * .017f), first = Math.max(9 * dp, unit * .026f);
+        float R = p.radius(), gap = Math.max(6 * dp, unit * .017f), first = Math.max(9 * dp, unit * .026f);
         int dc = Math.min(p.rocks, 60), idx = 0, ring = 0;
         while (idx < dc) {
             int m = Math.min(10 + ring * 6, dc - idx);
@@ -399,7 +405,7 @@ public final class Engine {
     }
 
     public int orbitRings(Planet p, float[] radii) {
-        float R = radiusOf(p), gap = Math.max(6 * dp, unit * .017f), first = Math.max(9 * dp, unit * .026f);
+        float R = p.radius(), gap = Math.max(6 * dp, unit * .017f), first = Math.max(9 * dp, unit * .026f);
         int dc = Math.min(p.rocks, 60), idx = 0, ring = 0;
         while (idx < dc && ring < radii.length) { radii[ring] = R + first + ring * gap; idx += Math.min(10 + ring * 6, dc - idx); ring++; }
         return ring;

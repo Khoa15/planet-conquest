@@ -31,7 +31,7 @@ public abstract class EngineTestBase implements Engine.Listener {
     protected void secs(float s) { tick(Math.round(s * 60)); }
     protected void start(Level L) { finishWin = null; finishReason = null; events.clear(); e.start(L); }
     protected Planet me() { return e.planets.get(0); }
-    protected void freezeAi() { for (Planet p : e.planets) p.think = 1e9f; }
+    protected void freezeAi() { for (Planet p : e.planets) p.ai.think = 1e9f; }
 
     protected void drag(Planet a, float bx, float by) {
         e.down(a.x, a.y);

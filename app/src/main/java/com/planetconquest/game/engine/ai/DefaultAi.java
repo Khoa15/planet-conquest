@@ -15,7 +15,7 @@ public final class DefaultAi implements AiStrategy {
     // ---------- AI ----------
     private static int incoming(Engine eng, Planet p) {
         int c = 0;
-        for (Rock r : eng.rocks) if (!r.dead && r.t == p && r.owner != p.owner) c++;
+        for (Rock r : eng.rocks()) if (!r.dead && r.t == p && r.owner != p.owner) c++;
         return c;
     }
 
@@ -25,16 +25,16 @@ public final class DefaultAi implements AiStrategy {
         int cap = eng.capOf(p);
         float full = (float) p.rocks / cap;
         float pressure = clamp((full - .55f) / .4f, 0, 1);       // kho càng đầy càng liều
-        float bold = p.bold + (.9f - p.bold) * pressure;
+        float bold = p.ai.bold + (.9f - p.ai.bold) * pressure;
         int threat = incoming(eng, p);
         int keep = eng.rules().finiteRocks() ? 3 : 10;
         int reserve = Math.min(p.rocks, Math.max(0, (int) Math.ceil(threat * 1.15f) - p.armor) + keep);
         int avail = p.rocks - reserve;
-        for (Planet q : eng.planets) {                                // chi viện đồng minh đang bị đánh
+        for (Planet q : eng.planets()) {                                // chi viện đồng minh đang bị đánh
             if (q == p || q.owner != p.owner) continue;
             if (hyp(q.x - p.x, q.y - p.y) > rp) continue;
             int t = incoming(eng, q);
-            if (t > eng.hpOf(q) * .7f && avail >= 8) avail -= eng.launch(p, q, 0, 0, Math.min(avail, (int) Math.ceil(t * .8f)), false);
+            if (t > q.hp() * .7f && avail >= 8) avail -= eng.launch(p, q, 0, 0, Math.min(avail, (int) Math.ceil(t * .8f)), false);
         }
         if (avail < (eng.rules().finiteRocks() ? 5 : 8)) return;
         boolean canUp = p.level < eng.maxLvl(p) && threat == 0;
@@ -44,12 +44,12 @@ public final class DefaultAi implements AiStrategy {
         Planet best = null, weak = null;
         float bs = 0;
         int bestNeed = 0, weakNeed = Integer.MAX_VALUE;
-        for (Planet q : eng.planets) {                                // mọi hành tinh khác phe đều là đối thủ
+        for (Planet q : eng.planets()) {                                // mọi hành tinh khác phe đều là đối thủ
             if (q.owner == p.owner) continue;
             float d = hyp(q.x - p.x, q.y - p.y);
             if (d > rp) continue;
             float eta = d / (eng.unit * Engine.ROCK_SPEED);
-            int need = (int) Math.ceil((eng.hpOf(q) + eng.rateOf(q) * eta) * bold + 3);
+            int need = (int) Math.ceil((q.hp() + eng.rateOf(q) * eta) * bold + 3);
             if (need < weakNeed) { weakNeed = need; weak = q; }
             if (avail < need) continue;
             float s = (1f / (need + 8)) * (1f / (.4f + d / eng.unit));
@@ -66,16 +66,16 @@ public final class DefaultAi implements AiStrategy {
         float rp = eng.rangePx();
         int keep = eng.rules().finiteRocks() ? 3 : 10, minA = eng.rules().finiteRocks() ? 6 : 12;
         ArrayList<Planet> src = new ArrayList<Planet>();
-        for (Planet p : eng.planets) if (!Faction.isPlayer(p.owner) && p.rocks - Math.min(p.rocks, keep) >= minA) src.add(p);
+        for (Planet p : eng.planets()) if (!Faction.isPlayer(p.owner) && p.rocks - Math.min(p.rocks, keep) >= minA) src.add(p);
         for (int i = 1; i < src.size(); i++)
             for (int j = i; j > 0 && src.get(j).rocks > src.get(j - 1).rocks; j--) { Planet t = src.get(j); src.set(j, src.get(j - 1)); src.set(j - 1, t); }
         for (Planet s : src) {
             int a = s.rocks - Math.min(s.rocks, keep);
             Planet tgt = null;
             int th = Integer.MAX_VALUE;
-            for (Planet q : eng.planets) {
+            for (Planet q : eng.planets()) {
                 if (q.owner == s.owner || hyp(q.x - s.x, q.y - s.y) > rp) continue;
-                int h = eng.hpOf(q);
+                int h = q.hp();
                 if (h < th) { th = h; tgt = q; }
             }
             if (tgt != null && eng.launch(s, tgt, 0, 0, (int) Math.floor(a * .6f), false) > 0) return;

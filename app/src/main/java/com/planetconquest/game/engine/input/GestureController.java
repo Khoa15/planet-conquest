@@ -43,9 +43,9 @@ public final class GestureController {
     public Planet hit(float x, float y) {
         Planet best = null;
         float bd = Float.MAX_VALUE, slop = Math.max(22 * eng.dp, eng.unit * .05f);
-        for (Planet p : eng.planets) {
+        for (Planet p : eng.planets()) {
             float d = hyp(p.x - x, p.y - y);
-            if (d <= eng.radiusOf(p) + slop && d < bd) { best = p; bd = d; }
+            if (d <= p.radius() + slop && d < bd) { best = p; bd = d; }
         }
         return best;
     }
@@ -188,13 +188,13 @@ public final class GestureController {
     public Selection computeSelection(float[] xs, float[] ys, int n) {
         Selection s = new Selection();
         if (n >= 3) {
-            for (Planet p : eng.planets) {
+            for (Planet p : eng.planets()) {
                 if (!Faction.isPlayer(p.owner) || p.rocks <= 0) continue;
                 int dc = eng.orbitDots(p, dotX, dotY), ic = 0;
                 for (int i = 0; i < dc; i++) if (inPoly(dotX[i], dotY[i], xs, ys, n)) ic++;
                 if (ic > 0) s.addGroup(p, Math.min(p.rocks, ic >= dc ? p.rocks : Math.max(1, Math.round((float) ic / dc * p.rocks))));
             }
-            for (Rock r : eng.rocks) if (!r.dead && Faction.isPlayer(r.owner) && !r.feed && inPoly(r.x, r.y, xs, ys, n)) s.loose.add(r);
+            for (Rock r : eng.rocks()) if (!r.dead && Faction.isPlayer(r.owner) && !r.feed && inPoly(r.x, r.y, xs, ys, n)) s.loose.add(r);
         }
         s.xs = Arrays.copyOf(xs, n); s.ys = Arrays.copyOf(ys, n); s.n = n;
         float cx = 0, cy = 0;

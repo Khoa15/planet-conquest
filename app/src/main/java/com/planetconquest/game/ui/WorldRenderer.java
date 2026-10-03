@@ -47,8 +47,8 @@ public final class WorldRenderer extends Painter {
     }
 
     private void drawIntroCue(Canvas c) {
-        if (!eng.lvl.intro || session.introStep() >= GameSession.INTRO_STEP_COUNT || eng.pointer() != null || eng.planets.size() < 2) return;
-        Planet me = eng.planets.get(0), en = eng.planets.get(1);
+        if (!eng.lvl.intro || session.introStep() >= GameSession.INTRO_STEP_COUNT || eng.pointer() != null || eng.planets().size() < 2) return;
+        Planet me = eng.planets().get(0), en = eng.planets().get(1);
         float pulse = .5f + .5f * sin(eng.clock * 4);
         stroke.setColor(alpha(C_GOLD, .55f + .35f * pulse));
         stroke.setStrokeWidth(2.5f * dp);
@@ -56,7 +56,7 @@ public final class WorldRenderer extends Painter {
             case 0: case 4: {
                 if (session.introStep() == 4 && eng.selection() != null) break;
                 dashed(true, eng.clock);
-                float r1 = eng.radiusOf(me) + 12 * dp, r2 = eng.radiusOf(en) + 14 * dp, d = (float) Math.hypot(en.x - me.x, en.y - me.y);
+                float r1 = me.radius() + 12 * dp, r2 = en.radius() + 14 * dp, d = (float) Math.hypot(en.x - me.x, en.y - me.y);
                 float ux = (en.x - me.x) / d, uy = (en.y - me.y) / d;
                 c.drawLine(me.x + ux * r1, me.y + uy * r1, en.x - ux * r2, en.y - uy * r2, stroke);
                 dashed(false, 0);
@@ -65,7 +65,7 @@ public final class WorldRenderer extends Painter {
             case 1: {
                 if (eng.selection() != null) break;
                 int nr = eng.orbitRings(me, rings);
-                float rad = (nr > 0 ? rings[nr - 1] : eng.radiusOf(me)) + 16 * dp;
+                float rad = (nr > 0 ? rings[nr - 1] : me.radius()) + 16 * dp;
                 dashed(true, eng.clock);
                 c.drawCircle(me.x, me.y, rad, stroke);
                 dashed(false, 0);
@@ -79,7 +79,7 @@ public final class WorldRenderer extends Painter {
                 break;
             }
             case 3:
-                c.drawCircle(me.x, me.y, eng.radiusOf(me) + (8 + 6 * pulse) * dp, stroke);
+                c.drawCircle(me.x, me.y, me.radius() + (8 + 6 * pulse) * dp, stroke);
                 break;
         }
     }
@@ -88,14 +88,14 @@ public final class WorldRenderer extends Painter {
     public void draw(Canvas c, boolean playing) {
         eng.updateLive();
         Level L = eng.lvl;
-        if (!Float.isInfinite(eng.rangePx())) { tmpPlanets.clear(); for (Planet p : eng.planets) if (Faction.isPlayer(p.owner)) tmpPlanets.add(p); drawRange(c, tmpPlanets, .16f); }
-        for (Planet p : eng.planets) drawPlanet(c, p);
-        for (Planet p : eng.planets) drawOrbit(c, p);
-        if (playing && !L.intro && eng.time < 10 && eng.pointer() == null && eng.selection() == null && !eng.planets.isEmpty()) {
-            Planet p = eng.planets.get(0);
+        if (!Float.isInfinite(eng.rangePx())) { tmpPlanets.clear(); for (Planet p : eng.planets()) if (Faction.isPlayer(p.owner)) tmpPlanets.add(p); drawRange(c, tmpPlanets, .16f); }
+        for (Planet p : eng.planets()) drawPlanet(c, p);
+        for (Planet p : eng.planets()) drawOrbit(c, p);
+        if (playing && !L.intro && eng.time < 10 && eng.pointer() == null && eng.selection() == null && !eng.planets().isEmpty()) {
+            Planet p = eng.planets().get(0);
             stroke.setColor(alpha(C_YOU, .8f)); stroke.setStrokeWidth(2 * dp);
             dashed(true, eng.clock * .3f);
-            c.drawCircle(p.x, p.y, eng.radiusOf(p) + (14 + 3 * sin(eng.clock * 4)) * dp, stroke);
+            c.drawCircle(p.x, p.y, p.radius() + (14 + 3 * sin(eng.clock * 4)) * dp, stroke);
             dashed(false, 0);
         }
         if (playing) drawIntroCue(c);
@@ -150,7 +150,7 @@ public final class WorldRenderer extends Painter {
     }
 
     private void drawPlanet(Canvas c, Planet p) {
-        float R = eng.radiusOf(p);
+        float R = p.radius();
         boolean fg = eng.fogged(p);
         drawPlanetBody(c, p.x, p.y, R, p.owner, p.seed);
         if (p.level < eng.maxLvl(p) && !fg) {
@@ -171,7 +171,7 @@ public final class WorldRenderer extends Painter {
         text(c, n, p.x + dp, p.y - R * .24f + dp, big, 0x73000000, tfBold, Paint.Align.CENTER);
         text(c, n, p.x, p.y - R * .24f, big, 0xFFFFFFFF, tfBold, Paint.Align.CENTER);
         text(c, fg ? tx.levelPrefix + "?" : tx.levelPrefix + p.level + "/" + eng.maxLvl(p), p.x, p.y + R * .28f, small, 0xD9FFFFFF, tfBold, Paint.Align.CENTER);
-        text(c, tx.hpPrefix + (fg ? "?" : String.valueOf(eng.hpOf(p))), p.x, p.y + R * .6f, small, 0xB3FFFFFF, tfBold, Paint.Align.CENTER);
+        text(c, tx.hpPrefix + (fg ? "?" : String.valueOf(p.hp())), p.x, p.y + R * .6f, small, 0xB3FFFFFF, tfBold, Paint.Align.CENTER);
     }
 
     private void drawOrbit(Canvas c, Planet p) {
@@ -191,7 +191,7 @@ public final class WorldRenderer extends Painter {
 
     private void drawNeutrals(Canvas c) {
         boolean hot = eng.rules().asteroidsHitPlanets();
-        for (Asteroid a : eng.neutrals) {
+        for (Asteroid a : eng.neutrals()) {
             path.reset();
             for (int i = 0; i < 8; i++) {
                 float ang = a.rot + i / 8f * TAU, r = a.rad * a.verts[i];
@@ -210,7 +210,7 @@ public final class WorldRenderer extends Painter {
     }
 
     private void drawRocks(Canvas c) {
-        for (Rock r : eng.rocks) {
+        for (Rock r : eng.rocks()) {
             int o = r.owner;
             if (r.idle) {
                 float bx = sin(eng.clock * 1.4f + r.ph) * 1.4f * dp, by = cos(eng.clock * 1.1f + r.ph) * 1.4f * dp;
@@ -241,25 +241,25 @@ public final class WorldRenderer extends Painter {
         stroke.setStrokeWidth(2 * dp);
         dashed(true, eng.clock);
         for (Planet s : sel) {
-            float R = eng.radiusOf(s);
+            float R = s.radius();
             stroke.setColor(C_YOU);
             c.drawCircle(s.x, s.y, R + 9 * dp, stroke);
             if (cancel || s == h) continue;
             float ex = pt.x, ey = pt.y;
-            if (h != null) { float d = (float) Math.hypot(h.x - s.x, h.y - s.y), q = eng.radiusOf(h) + 6 * dp; if (d > 0) { ex = h.x - (h.x - s.x) / d * q; ey = h.y - (h.y - s.y) / d * q; } }
+            if (h != null) { float d = (float) Math.hypot(h.x - s.x, h.y - s.y), q = h.radius() + 6 * dp; if (d > 0) { ex = h.x - (h.x - s.x) / d * q; ey = h.y - (h.y - s.y) / d * q; } }
             float d2 = (float) Math.hypot(ex - s.x, ey - s.y);
             if (d2 < 1) continue;
             stroke.setColor(col);
             c.drawLine(s.x + (ex - s.x) / d2 * R, s.y + (ey - s.y) / d2 * R, ex, ey, stroke);
         }
         dashed(false, 0);
-        if (h != null && !cancel) { stroke.setColor(col); stroke.setStrokeWidth(3 * dp); c.drawCircle(h.x, h.y, eng.radiusOf(h) + 11 * dp, stroke); }
+        if (h != null && !cancel) { stroke.setColor(col); stroke.setStrokeWidth(3 * dp); c.drawCircle(h.x, h.y, h.radius() + 11 * dp, stroke); }
         int tot = 0;
         for (Planet s : sel) { if (s == h && sel.size() > 1) continue; tot += eng.quickCount(s); }
-        float lx = h != null ? h.x : pt.x, ly = h != null ? h.y - eng.radiusOf(h) - 34 * dp : pt.y - 48 * dp;
+        float lx = h != null ? h.x : pt.x, ly = h != null ? h.y - h.radius() - 34 * dp : pt.y - 48 * dp;
         if (cancel) pill(c, lx, ly, tx.s(R.string.pill_cancel), col);
         else if (far) pill(c, lx, ly, tx.s(R.string.msg_out_of_range), col);
-        else if (h != null) pill(c, lx, ly, atk ? tx.s(R.string.pill_attack, tot, eng.fogged(h) ? "?" : String.valueOf(eng.hpOf(h))) : tx.s(R.string.pill_move, tot), col);
+        else if (h != null) pill(c, lx, ly, atk ? tx.s(R.string.pill_attack, tot, eng.fogged(h) ? "?" : String.valueOf(h.hp())) : tx.s(R.string.pill_move, tot), col);
         else pill(c, lx, ly, tx.s(R.string.pill_point, tot), col);
     }
 
@@ -308,15 +308,15 @@ public final class WorldRenderer extends Painter {
             int col = far ? C_FAR : atk ? C_DANGER : C_YOU;
             drawRange(c, tmpPlanets, .5f);
             float ex = pt.x, ey = pt.y;
-            if (h != null) { float d = (float) Math.hypot(h.x - sel.cx, h.y - sel.cy), q = eng.radiusOf(h) + 6 * dp; if (d > 0) { ex = h.x - (h.x - sel.cx) / d * q; ey = h.y - (h.y - sel.cy) / d * q; } }
+            if (h != null) { float d = (float) Math.hypot(h.x - sel.cx, h.y - sel.cy), q = h.radius() + 6 * dp; if (d > 0) { ex = h.x - (h.x - sel.cx) / d * q; ey = h.y - (h.y - sel.cy) / d * q; } }
             stroke.setColor(col); stroke.setStrokeWidth(2 * dp);
             dashed(true, eng.clock); c.drawLine(sel.cx, sel.cy, ex, ey, stroke); dashed(false, 0);
-            if (h != null) { stroke.setStrokeWidth(3 * dp); c.drawCircle(h.x, h.y, eng.radiusOf(h) + 11 * dp, stroke); }
-            float lx = h != null ? h.x : pt.x, ly = h != null ? h.y - eng.radiusOf(h) - 34 * dp : pt.y - 48 * dp;
+            if (h != null) { stroke.setStrokeWidth(3 * dp); c.drawCircle(h.x, h.y, h.radius() + 11 * dp, stroke); }
+            float lx = h != null ? h.x : pt.x, ly = h != null ? h.y - h.radius() - 34 * dp : pt.y - 48 * dp;
             if (far) pill(c, lx, ly, tx.s(R.string.msg_out_of_range), col);
             else if (h != null) {
                 boolean only = sel.planets.size() == 1 && sel.planets.get(0) == h && sel.loose.isEmpty();
-                pill(c, lx, ly, atk ? tx.s(R.string.pill_attack, tot, eng.fogged(h) ? "?" : String.valueOf(eng.hpOf(h))) : only ? tx.s(R.string.pill_upgrade, tot) : tx.s(R.string.pill_move, tot), col);
+                pill(c, lx, ly, atk ? tx.s(R.string.pill_attack, tot, eng.fogged(h) ? "?" : String.valueOf(h.hp())) : only ? tx.s(R.string.pill_upgrade, tot) : tx.s(R.string.pill_move, tot), col);
             } else pill(c, lx, ly, tx.s(R.string.pill_point, tot), col);
         } else pill(c, sel.cx, sel.cy, tx.s(R.string.pill_rocks, tot), C_YOU);
     }

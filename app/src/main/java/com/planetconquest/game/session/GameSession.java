@@ -103,7 +103,7 @@ public final class GameSession {
     public EndInfo finish(boolean win, EndReason reason) {
         Level L = eng.lvl;
         String time = fmtTime(eng.time);
-        int planets = eng.planets.size();
+        int planets = eng.planets().size();
         EndInfo info;
         if (L.endless) {
             if (win) {

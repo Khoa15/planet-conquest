@@ -91,7 +91,7 @@ public final class PlayScreen extends BaseScreen {
         hudBottom = 0;
         chipY = 12 * dp;
         float x = 12 * dp;
-        x = chip(c, x, chipY, tx.s(R.string.hud_planets), eng.playerPlanets() + "/" + eng.planets.size(), C_INK) + 6 * dp;
+        x = chip(c, x, chipY, tx.s(R.string.hud_planets), eng.playerPlanets() + "/" + eng.planets().size(), C_INK) + 6 * dp;
         x = chip(c, x, chipY, tx.s(R.string.hud_rocks), String.valueOf(eng.playerRocks()), C_INK) + 6 * dp;
         Level L = eng.lvl;
         if (eng.rules().timeLimit() > 0) {

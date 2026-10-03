@@ -7,5 +7,9 @@ public final class Rock extends Body {
     public float dist;       // quãng đường đã bay (dùng cho giới hạn tầm bay)
     public Planet t;         // đích là hành tinh (null nếu đích là vị trí trống)
     public float ptx, pty;   // đích là vị trí trống
-    public boolean hasPt, feed, idle;
+    public boolean feed, idle;
+
+    /** Tọa độ đích hiện tại: hành tinh nếu có, ngược lại vị trí trống. */
+    public float targetX() { return t != null ? t.x : ptx; }
+    public float targetY() { return t != null ? t.y : pty; }
 }
