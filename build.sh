@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build APK Android KHÔNG cần Gradle: aapt -> javac -> dx/d8 -> zipalign -> apksigner.
 #   ./build.sh          build APK debug đã ký: build/planet-conquest-<version>.apk
-#   ./build.sh test     chạy kiểm thử engine trên JVM (tools/EngineSim.java)
+#   ./build.sh test     chạy kiểm thử engine trên JVM (JUnit, app/src/test/java)
 #   ./build.sh install  build rồi cài lên thiết bị qua adb
 # Biến môi trường: ANDROID_HOME (mặc định /usr/lib/android-sdk), PLATFORM_JAR, BUILD_TOOLS
 set -euo pipefail
@@ -17,10 +17,16 @@ SRC=app/src/main
 JAVA_OPTS="-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8"
 
 if [ "${1:-apk}" = "test" ]; then
+  LIB="$OUT/lib"; mkdir -p "$LIB"
+  MAVEN=https://repo1.maven.org/maven2
+  [ -f "$LIB/junit-4.13.2.jar" ] || curl -sfL -o "$LIB/junit-4.13.2.jar" "$MAVEN/junit/junit/4.13.2/junit-4.13.2.jar"
+  [ -f "$LIB/hamcrest-core-1.3.jar" ] || curl -sfL -o "$LIB/hamcrest-core-1.3.jar" "$MAVEN/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
+  CP="$LIB/junit-4.13.2.jar:$LIB/hamcrest-core-1.3.jar"
   rm -rf "$OUT/test" && mkdir -p "$OUT/test"
-  javac -encoding UTF-8 -source 8 -target 8 -Xlint:-options -d "$OUT/test" \
-    $(find "$SRC/java/com/planetconquest/game/engine" -name '*.java') tools/EngineSim.java
-  java $JAVA_OPTS -cp "$OUT/test" EngineSim
+  javac -encoding UTF-8 -source 8 -target 8 -Xlint:-options -cp "$CP" -d "$OUT/test" \
+    $(find "$SRC/java/com/planetconquest/game/engine" app/src/test/java -name '*.java')
+  CLASSES=$(cd app/src/test/java && find . -name '*Test.java' | sed -e 's|^\./||' -e 's|\.java$||' -e 's|/|.|g')
+  java $JAVA_OPTS -cp "$OUT/test:$CP" org.junit.runner.JUnitCore $CLASSES
   exit $?
 fi
 

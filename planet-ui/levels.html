@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planet Conquest – Chọn màn (lộ trình hành tinh)</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .phone { position: relative; width: 360px; max-width: 100%; }
+  #viewport { width: 360px; height: 640px; overflow-y: auto; border-radius: 14px; border: 1px solid #a0afff40; scrollbar-width: none; background: #05070f; }
+  #viewport::-webkit-scrollbar { display: none; }
+  #viewport canvas { display: block; width: 360px; height: auto; border: 0; border-radius: 0; }
+  .title { position: absolute; left: 0; right: 0; top: 0; height: 62px; padding: 18px 16px 0 74px; font-weight: 700; font-size: 22px;
+           border-radius: 14px 14px 0 0; background: linear-gradient(#05070fee, #05070f00); pointer-events: none; }
+  .back { position: absolute; left: 16px; top: 18px; width: 44px; height: 44px; border-radius: 22px; background: #ffffff14; border: 1px solid #a0afff55; display: grid; place-items: center; font-size: 20px; }
+  .info { background: #0e122ae0; border: 1px solid #a0afff40; border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.5; color: #8f99c8; min-height: 84px; }
+  .info b { color: #e9edff; font-size: 15px; }
+  .info .ok { color: #4ff0b4; font-weight: 700; margin-left: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="phone">
+    <div id="viewport"><canvas id="map"></canvas></div>
+    <div class="back">‹</div>
+    <div class="title">Chọn màn</div>
+  </div>
+  <section class="panel">
+    <h1>Lộ trình</h1>
+    <div class="info" id="info">Chạm một hành tinh để xem thông tin.</div>
+    <div class="btns">
+      <button id="next">Qua màn kế</button>
+      <button id="reset">Chưa qua màn nào</button>
+      <button id="all">Qua tất cả</button>
+      <button id="rewind">Cuộn về Hướng dẫn</button>
+    </div>
+    <label class="row"><input id="endlessBest" type="checkbox"> Endless đã có kỷ lục (hố đen sáng)</label>
+    <label class="row"><input id="pause" type="checkbox"> Tạm dừng chuyển động</label>
+    <p style="font-size:12px;color:#8f99c8;margin:0">Kéo/cuộn trong khung điện thoại. Hành tinh tối = chưa qua; qua màn thì sáng dần lên.
+      Vòng vàng nét đứt = màn kế tiếp nên chơi. Đường nối chỉ sáng khi màn trước đã qua.</p>
+  </section>
+</main>
+<script src="levels.js"></script>
+</body>
+</html>
