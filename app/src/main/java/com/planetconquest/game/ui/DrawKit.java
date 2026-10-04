@@ -15,6 +15,9 @@ import static com.planetconquest.game.ui.Palette.*;
 
 /** Bộ công cụ vẽ dùng chung: kích thước màn hình, Paint, font và các hình cơ bản (chữ, panel, nút, viên thuốc). */
 public final class DrawKit {
+    /** Nút ngôn ngữ (dp): bo góc, bán kính quả cầu, khoảng cách tới chữ, cỡ chữ. Lấy từ welcome.js. */
+    private static final float LANG_RADIUS = 12, LANG_GLOBE_R = 7, LANG_GAP = 6, LANG_TEXT = 13;
+
     public final float dp;
     public float w, h;
     public final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), stroke = new Paint(Paint.ANTI_ALIAS_FLAG), txt = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -83,7 +86,7 @@ public final class DrawKit {
     public void drawButton(Canvas c, UiButton b) {
         if (!b.visible) return;
         RectF r = b.r;
-        float rad = b.style == UiButton.Style.ICON ? 14 * dp : Math.min(r.height() / 2, 16 * dp);
+        float rad = b.icon == UiButton.Icon.LANGUAGE ? LANG_RADIUS * dp : b.style == UiButton.Style.ICON ? 14 * dp : Math.min(r.height() / 2, 16 * dp);
         c.save();
         if (b.pressed) c.scale(.96f, .96f, r.centerX(), r.centerY());
         int fillC, textC, strokeC = 0;
@@ -96,11 +99,27 @@ public final class DrawKit {
         }
         if (b.icon == UiButton.Icon.SOUND_ON) { textC = C_YOU; strokeC = ColorUtil.alpha(C_YOU, .55f); }   // bật: xanh ngọc; tắt: xám
         else if (b.icon == UiButton.Icon.SOUND_OFF) textC = C_MUTED;
+        else if (b.icon == UiButton.Icon.LANGUAGE) { textC = C_YOU; strokeC = ColorUtil.alpha(C_YOU, .55f); }
         if (fillC != 0) { fill.setColor(fillC); c.drawRoundRect(r, rad, rad, fill); }
         if (strokeC != 0) { stroke.setColor(strokeC); stroke.setStrokeWidth(1.2f * dp); c.drawRoundRect(r, rad, rad, stroke); }
-        if (b.style == UiButton.Style.ICON) drawIcon(c, b.icon, r.centerX(), r.centerY(), textC);
+        if (b.icon == UiButton.Icon.LANGUAGE) drawLanguage(c, b, textC);
+        else if (b.style == UiButton.Style.ICON) drawIcon(c, b.icon, r.centerX(), r.centerY(), textC);
         else text(c, b.label, r.centerX(), r.centerY(), (b.style == UiButton.Style.SMALL ? 13.5f : 16.5f) * dp, textC, bold, Paint.Align.CENTER);
         c.restore();
+    }
+
+    /** Nút ngôn ngữ: quả cầu + mã ngôn ngữ cùng tâm dọc; cả cụm canh giữa theo mã rộng nhất nên không nhảy khi đổi. Số liệu lấy từ welcome.js. */
+    private void drawLanguage(Canvas c, UiButton b, int globeCol) {
+        float cx = b.r.centerX(), cy = b.r.centerY(), gr = LANG_GLOBE_R * dp;
+        txt.setTextSize(LANG_TEXT * dp); txt.setTypeface(bold);
+        float tw = txt.measureText(b.label);
+        for (String s : b.labelSlot) tw = Math.max(tw, txt.measureText(s));
+        float start = cx - (2 * gr + LANG_GAP * dp + tw) / 2, gx = start + gr;
+        stroke.setColor(globeCol); stroke.setStrokeWidth(1.5f * dp);
+        c.drawCircle(gx, cy, gr, stroke);
+        tmp.set(gx - gr * .42f, cy - gr, gx + gr * .42f, cy + gr); c.drawOval(tmp, stroke);
+        c.drawLine(gx - gr, cy, gx + gr, cy, stroke);
+        text(c, b.label, start + 2 * gr + LANG_GAP * dp, cy, LANG_TEXT * dp, C_INK, bold, Paint.Align.LEFT);
     }
 
     private void drawIcon(Canvas c, UiButton.Icon icon, float cx, float cy, int col) {

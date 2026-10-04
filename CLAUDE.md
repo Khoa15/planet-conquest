@@ -57,7 +57,7 @@ Mọi giao diện mới (màn hình, HUD, hộp thoại, hiệu ứng, thành ph
 - **I - Interface Segregation**: interface nhỏ, tập trung (`Screen`, `ScreenHost`, `AiStrategy`, `LevelRule`); không bắt lớp cài đặt những phương thức nó không dùng.
 - **D - Dependency Inversion**: phụ thuộc vào abstraction, tiêm phụ thuộc qua constructor (như `MainActivity` tạo `Sfx` và `ProgressStore` rồi đưa vào `GameView`). Không dùng singleton/static toàn cục để giấu phụ thuộc.
 - `engine/` là Java thuần, **không import `android.*`**, để kiểm thử được trên JVM. Mọi thứ phụ thuộc Android nằm ngoài `engine/`.
-- Chữ hiển thị chỉ nằm trong `res/values/strings.xml`, tra qua `text/Texts`; engine chỉ phát mã thông báo (`Msg`), không chứa chuỗi.
+- Chữ hiển thị chỉ nằm trong `res/values/strings.xml` (tiếng Việt, mặc định) và `res/values-en/strings.xml` (tiếng Anh); thêm/sửa chuỗi phải cập nhật cả hai. Tra qua `text/Texts`; engine chỉ phát mã thông báo (`Msg`), không chứa chuỗi.
 - Không số/chuỗi "ma thuật" rải rác: màu vào `Palette`, hằng số vào hằng có tên.
 - Đặt tên lớp theo vai trò, mỗi file một lớp công khai, nhỏ gọn; không thêm trừu tượng khi chưa có nhu cầu thật.
 - Thêm/sửa luật chơi phải kèm kiểm thử JUnit trong `app/src/test/` (chạy `./build.sh test`).
@@ -76,7 +76,7 @@ planet-conquest/
   docs/, screenshots/   Tài liệu, ảnh
   app/src/main/
     AndroidManifest.xml
-    res/                mipmap (icon), raw (âm thanh), values/strings.xml (mọi chuỗi)
+    res/                mipmap (icon), raw (âm thanh), values/strings.xml (mọi chuỗi, tiếng Việt), values-en/strings.xml (tiếng Anh)
     java/com/planetconquest/game/
       MainActivity      Toàn màn hình, vòng đời; tạo Sfx, ProgressStore rồi đưa vào GameView
       GameView          Vòng lặp khung hình; chuyển cảm ứng/vẽ cho Screen hiện tại; thông báo nổi
@@ -88,8 +88,8 @@ planet-conquest/
                         LevelPlanet, LevelPlanetRenderer, LevelPath (bản đồ chọn màn),
                         WelcomePlayIcon, WelcomeCompass (nút trên màn Welcome)
       audio/            Sfx, Sound, MusicTrack
-      data/             ProgressStore (SharedPreferences)
-      text/             Texts: cổng duy nhất tra chuỗi
+      data/             ProgressStore, LanguageStore (SharedPreferences)
+      text/             Texts: cổng duy nhất tra chuỗi (đổi ngôn ngữ lúc chạy); Language (VI, EN; Java thuần, có JUnit)
       engine/           Java thuần, không phụ thuộc Android
         Engine, GameEvent, EndReason, Haptic, Msg, Notice
         model/          Planet, PlanetVisual, Rock, Asteroid, Body, Faction, AiState, Selection,

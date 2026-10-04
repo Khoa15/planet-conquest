@@ -40,7 +40,7 @@ Cấu hình Gradle chưa được chạy thử trong môi trường build APK đ
 ```
 ```
 app/src/main/java/com/planetconquest/game/
-  MainActivity.java     Toàn màn hình, chuyển vòng đời, tạo Sfx và ProgressStore rồi đưa vào GameView
+  MainActivity.java     Toàn màn hình, chuyển vòng đời, tạo Sfx, ProgressStore và LanguageStore rồi đưa vào GameView
   GameView.java         Vòng lặp khung hình, chuyển cảm ứng/vẽ cho Screen đang hiện, thông báo nổi
   screen/               Mỗi màn hình một lớp (State): Welcome, LevelSelect, Brief, Play, Pause, End
   session/GameSession   Phiên chơi: màn hiện tại, Endless, bước Hướng dẫn, dữ liệu màn kết thúc
@@ -49,7 +49,9 @@ app/src/main/java/com/planetconquest/game/
                         WelcomePlayIcon, WelcomeCompass (nút trên màn Welcome)
   audio/                Sfx (SoundPool + AudioTrack), Sound, MusicTrack
   data/ProgressStore    Tiến độ lưu trong SharedPreferences
-  text/Texts            Cổng duy nhất tra chuỗi trong res/values/strings.xml
+  data/LanguageStore    Ngôn ngữ đã chọn (VI/EN), lưu trong SharedPreferences
+  text/Texts            Cổng duy nhất tra chuỗi (res/values/ tiếng Việt, res/values-en/ tiếng Anh), đổi ngôn ngữ lúc chạy
+  text/Language         Ngôn ngữ hỗ trợ, Java thuần
   engine/               Logic Java thuần, không phụ thuộc Android
     Engine.java         Luật chơi và vòng mô phỏng, điều phối các thành phần dưới đây
     model/              Planet, Rock, Asteroid, Selection, Faction...
@@ -68,7 +70,7 @@ Engine tách khỏi Android nên toàn bộ luật chơi được kiểm thử t
 
 | Màn hình | Nội dung |
 |---|---|
-| Welcome | Tiêu đề, hoạt ảnh hành tinh, nút **Chơi** và **Hướng dẫn** |
+| Welcome | Tiêu đề, hoạt ảnh hành tinh, nút **Chơi** và **Hướng dẫn**, nút đổi ngôn ngữ **VI/EN** góc trên phải |
 | Chọn màn | Danh sách Hướng dẫn, 10 màn, Endless; đánh dấu màn đã qua |
 | Mô tả màn | Hạn chế của màn và cách vượt qua |
 | Chơi | HUD gọn (hành tinh, đá, đồng hồ/bản đồ), nút tạm dừng |

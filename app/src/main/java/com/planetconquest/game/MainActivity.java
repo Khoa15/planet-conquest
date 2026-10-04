@@ -9,6 +9,7 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import com.planetconquest.game.audio.Sfx;
+import com.planetconquest.game.data.LanguageStore;
 import com.planetconquest.game.data.ProgressStore;
 
 /** Activity duy nhất: toàn màn hình, giữ màn hình sáng, chuyển vòng đời cho GameView. */
@@ -23,7 +24,7 @@ public final class MainActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         SharedPreferences prefs = getSharedPreferences("planet_conquest", Context.MODE_PRIVATE);
         sfx = new Sfx(this, prefs);
-        view = new GameView(this, sfx, new ProgressStore(prefs));
+        view = new GameView(this, sfx, new ProgressStore(prefs), new LanguageStore(prefs));
         setContentView(view);
         hideSystemUi();
     }

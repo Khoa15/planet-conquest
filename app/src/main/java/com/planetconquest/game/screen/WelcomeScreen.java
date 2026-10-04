@@ -5,6 +5,7 @@ import android.graphics.Paint;
 
 import com.planetconquest.game.AppInfo;
 import com.planetconquest.game.R;
+import com.planetconquest.game.text.Language;
 import com.planetconquest.game.ui.UiButton;
 import com.planetconquest.game.ui.WelcomeCompass;
 import com.planetconquest.game.ui.WelcomePlayIcon;
@@ -20,6 +21,7 @@ import static com.planetconquest.game.ui.Palette.*;
 final class WelcomeScreen extends BaseScreen {
     private static final float PLAY_PRESS_SCALE = .965f, PLAY_HIT_SCALE = 1.15f, PLAY_PRESS_GLOW = .14f;
     private static final float BAR_MARGIN = 28, BAR_Y_FROM_BOTTOM = 76, SOUND_BTN = 44;
+    private static final float LANG_W = 58, LANG_H = 34, LANG_MARGIN = 16, LANG_TOP = 18;   // nút ngôn ngữ góc trên phải
     private enum Target { NONE, PLAY, MAP }
 
     private final WelcomeScene scene;
@@ -53,6 +55,16 @@ final class WelcomeScreen extends BaseScreen {
         add(new UiButton(null, UiButton.Style.ICON, icon, new Runnable() {
             @Override public void run() { toggleSound(); }
         })).at(BAR_MARGIN * dp, cy - SOUND_BTN * dp / 2, (BAR_MARGIN + SOUND_BTN) * dp, cy + SOUND_BTN * dp / 2);
+        add(new UiButton(host.language().code, UiButton.Style.ICON, UiButton.Icon.LANGUAGE, new Runnable() {
+            @Override public void run() { host.cycleLanguage(); }
+        }).slot(languageCodes())).at(W - (LANG_MARGIN + LANG_W) * dp, LANG_TOP * dp, W - LANG_MARGIN * dp, (LANG_TOP + LANG_H) * dp);
+    }
+
+    private static String[] languageCodes() {
+        Language[] all = Language.values();
+        String[] codes = new String[all.length];
+        for (int i = 0; i < all.length; i++) codes[i] = all[i].code;
+        return codes;
     }
 
     @Override public void update(float dt) { t += dt; }

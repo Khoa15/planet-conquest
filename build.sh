@@ -24,7 +24,7 @@ if [ "${1:-apk}" = "test" ]; then
   CP="$LIB/junit-4.13.2.jar:$LIB/hamcrest-core-1.3.jar"
   rm -rf "$OUT/test" && mkdir -p "$OUT/test"
   javac -encoding UTF-8 -source 8 -target 8 -Xlint:-options -cp "$CP" -d "$OUT/test" \
-    $(find "$SRC/java/com/planetconquest/game/engine" app/src/test/java -name '*.java')
+    $(find "$SRC/java/com/planetconquest/game/engine" app/src/test/java -name '*.java') "$SRC/java/com/planetconquest/game/text/Language.java"
   CLASSES=$(cd app/src/test/java && find . -name '*Test.java' | sed -e 's|^\./||' -e 's|\.java$||' -e 's|/|.|g')
   java $JAVA_OPTS -cp "$OUT/test:$CP" org.junit.runner.JUnitCore $CLASSES
   exit $?
