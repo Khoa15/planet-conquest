@@ -24,11 +24,11 @@
     <string name="endless_card_desc">Random maps, no restrictions. Asteroids slam into planets.</string>
     <string name="tutorial_card_desc">Learn to play: you versus one opponent, with more rocks on your side.</string>
     <string name="best_short">Best %1$d</string>
-    <string name="endless_card_planets">3–10 planets</string>
+    <string name="endless_card_planets">4–10 planets</string>
     <string name="planets_count">%1$d planets</string>
     <string name="learned">Learned</string>
     <string name="cleared">Cleared</string>
-    <string name="brief_endless_sub">Random maps of 3–10 planets. Clear one and the next appears, a little harder. Lose and it is over.</string>
+    <string name="brief_endless_sub">Random maps of 4–10 planets. Clear one and the next appears, a little harder. Lose and it is over.</string>
     <string name="section_limit">Restriction</string>
     <string name="section_note">Note</string>
     <string name="section_howto">How to win</string>
