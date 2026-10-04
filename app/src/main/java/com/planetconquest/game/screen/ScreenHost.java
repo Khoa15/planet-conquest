@@ -4,6 +4,7 @@ import com.planetconquest.game.audio.Sfx;
 import com.planetconquest.game.data.ProgressStore;
 import com.planetconquest.game.engine.Engine;
 import com.planetconquest.game.session.GameSession;
+import com.planetconquest.game.text.Language;
 import com.planetconquest.game.text.Texts;
 import com.planetconquest.game.ui.DrawKit;
 
@@ -16,8 +17,11 @@ public interface ScreenHost {
     Sfx sfx();
     Texts texts();
     Screens screens();
+    Language language();
 
     void go(Screen next);
+    /** Chuyển sang ngôn ngữ kế tiếp, lưu lại và dựng lại chữ của màn hình hiện tại. */
+    void cycleLanguage();
     void toast(String message);
     void invalidate();
 }

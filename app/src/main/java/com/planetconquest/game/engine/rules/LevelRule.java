@@ -33,6 +33,10 @@ public abstract class LevelRule {
     public int timeLimit() { return 0; }
     /** Số đá là hữu hạn (không sinh thêm): hết đá là thua và AI giữ lại ít đá hơn. */
     public boolean finiteRocks() { return false; }
+    /** Hệ số nhân tốc độ bay của đá; 1 = bình thường. */
+    public float rockSpeedScale() { return 1f; }
+    /** Hành tinh của người chơi còn ít đá hơn mức này thì bị cảnh báo "hở sườn"; 0 = không cảnh báo. */
+    public int thinGuardBelow() { return 0; }
     /** Thời gian nạp lại giữa hai lần gửi (giây); 0 = không có. */
     public float cooldownSeconds() { return 0; }
 }

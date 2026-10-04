@@ -12,6 +12,7 @@ public enum LevelPlanet {
     BELT(0xFF8A6A55),       // 7 Bãi thiên thạch
     RELOAD(0xFFFF8FD8),     // 8 Nạp đạn
     SURGE(0xFF00E5FF),      // 9 Đối thủ tăng tốc
+    VOYAGE(0xFF2EC4B6),     // 10 Viễn chinh: hành tinh nhỏ, đoàn đá đi chậm tới hành tinh xa
     BLACK_HOLE(0xFFFFB347); // Endless: hố đen, màu là màu đĩa bồi tụ
 
     public final int color;

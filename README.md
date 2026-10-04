@@ -1,7 +1,7 @@
 # Planet Conquest
 
 Game chiến thuật casual chơi một ngón tay trên Android, viết **native** bằng Java (Activity + Canvas),
-không dùng WebView hay framework đa nền tảng. Bản hiện tại: **0.4.0**.
+không dùng WebView hay framework đa nền tảng. Bản hiện tại: **0.5.0**.
 
 Bạn sở hữu một hành tinh và những viên đá quay quanh nó. Khoanh vòng để chọn đá, kéo tới hành tinh khác để
 tấn công, nâng cấp hành tinh, và chiếm toàn bộ bản đồ. Các hành tinh AI cũng đánh nhau và đánh bạn.
@@ -9,7 +9,7 @@ tấn công, nâng cấp hành tinh, và chiếm toàn bộ bản đồ. Các h�
 ## Cài nhanh
 
 ```bash
-adb install -r planet-conquest-0.4.0.apk
+adb install -r planet-conquest-0.5.0.apk
 ```
 
 APK là bản debug (ký bằng debug keystore), minSdk 21 (Android 5.0), targetSdk 34.
@@ -21,7 +21,7 @@ APK là bản debug (ký bằng debug keystore), minSdk 21 (Android 5.0), target
 Cần JDK 17 và Android SDK có `platforms/android-*` cùng `build-tools` (aapt, dx hoặc d8, zipalign, apksigner).
 
 ```bash
-./build.sh            # build/planet-conquest-0.4.0.apk
+./build.sh            # build/planet-conquest-0.5.0.apk
 ./build.sh install    # build, cài và mở app qua adb
 ./build.sh test       # chạy kiểm thử engine trên JVM, không cần thiết bị
 ```
@@ -40,7 +40,7 @@ Cấu hình Gradle chưa được chạy thử trong môi trường build APK đ
 ```
 ```
 app/src/main/java/com/planetconquest/game/
-  MainActivity.java     Toàn màn hình, chuyển vòng đời, tạo Sfx và ProgressStore rồi đưa vào GameView
+  MainActivity.java     Toàn màn hình, chuyển vòng đời, tạo Sfx, ProgressStore và LanguageStore rồi đưa vào GameView
   GameView.java         Vòng lặp khung hình, chuyển cảm ứng/vẽ cho Screen đang hiện, thông báo nổi
   screen/               Mỗi màn hình một lớp (State): Welcome, LevelSelect, Brief, Play, Pause, End
   session/GameSession   Phiên chơi: màn hiện tại, Endless, bước Hướng dẫn, dữ liệu màn kết thúc
@@ -49,7 +49,9 @@ app/src/main/java/com/planetconquest/game/
                         WelcomePlayIcon, WelcomeCompass (nút trên màn Welcome)
   audio/                Sfx (SoundPool + AudioTrack), Sound, MusicTrack
   data/ProgressStore    Tiến độ lưu trong SharedPreferences
-  text/Texts            Cổng duy nhất tra chuỗi trong res/values/strings.xml
+  data/LanguageStore    Ngôn ngữ đã chọn (VI/EN), lưu trong SharedPreferences
+  text/Texts            Cổng duy nhất tra chuỗi (res/values/ tiếng Anh mặc định, res/values-vi/ tiếng Việt), đổi ngôn ngữ lúc chạy
+  text/Language         Ngôn ngữ hỗ trợ, Java thuần
   engine/               Logic Java thuần, không phụ thuộc Android
     Engine.java         Luật chơi và vòng mô phỏng, điều phối các thành phần dưới đây
     model/              Planet, Rock, Asteroid, Selection, Faction...
@@ -68,8 +70,8 @@ Engine tách khỏi Android nên toàn bộ luật chơi được kiểm thử t
 
 | Màn hình | Nội dung |
 |---|---|
-| Welcome | Tiêu đề, hoạt ảnh hành tinh, nút **Chơi** và **Hướng dẫn** |
-| Chọn màn | Danh sách Hướng dẫn, 9 màn, Endless; đánh dấu màn đã qua |
+| Welcome | Tiêu đề, hoạt ảnh hành tinh, nút **Chơi** và **Hướng dẫn**, nút đổi ngôn ngữ **VI/EN** góc trên phải |
+| Chọn màn | Danh sách Hướng dẫn, 10 màn, Endless; đánh dấu màn đã qua |
 | Mô tả màn | Hạn chế của màn và cách vượt qua |
 | Chơi | HUD gọn (hành tinh, đá, đồng hồ/bản đồ), nút tạm dừng |
 | Tạm dừng | Tiếp tục, Chơi lại, Thoát ra menu |
@@ -113,7 +115,8 @@ dẫn qua 5 bước có gợi ý trực quan. Giao diện khi chơi không còn 
 | 7. Bãi thiên thạch | 8 | 22 thiên thạch to chặn đường |
 | 8. Nạp đạn | 9 | Mỗi hành tinh gửi quân 4 giây một lần |
 | 9. Đối thủ tăng tốc | 10 | Đối thủ sinh đá gấp đôi |
-| Endless | 3–10 ngẫu nhiên | Không hạn chế; thiên thạch đâm hành tinh, càng to càng mất máu |
+| 10. Viễn chinh | 5 | Hành tinh cách rất xa (lề ngang 72dp, dọc 100dp), không giới hạn tầm bay, đá bay ×0.25, vật thể thu nhỏ ×0.4; hành tinh còn dưới 8 đá bị cảnh báo "hở sườn" |
+| Endless | 3–10 ngẫu nhiên | Không giới hạn tầm bay; hành tinh nhỏ ×0.4, cách xa (0.47 unit, tự hạ khi bản đồ đông), đá bay ×0.25; thiên thạch đâm hành tinh, càng to càng mất máu |
 
 Thông số cân bằng nằm ở đầu `Engine.java`; cấu hình từng màn ở `engine/level/Levels.java`; hạn chế của màn là các `LevelRule` trong `engine/rules/`.
 

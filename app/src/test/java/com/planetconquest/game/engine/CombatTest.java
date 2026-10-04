@@ -34,7 +34,7 @@ public class CombatTest extends EngineTestBase {
         int prev = 0;
         for (float f : new float[]{.014f, .025f, .04f, .05f}) {
             int before = tp.rocks() + tp.armor();
-            Asteroid a = new Asteroid(); a.x = tp.x(); a.y = tp.y(); a.rad = f * e.unit(); a.owner = Faction.NEUTRAL;
+            Asteroid a = new Asteroid(); a.x = tp.x(); a.y = tp.y(); a.rad = f * e.unit() * e.bodyScale(); a.owner = Faction.NEUTRAL;
             e.neutrals.add(a); tick(1);
             int d = before - (tp.rocks() + tp.armor());
             assertTrue(d > prev);

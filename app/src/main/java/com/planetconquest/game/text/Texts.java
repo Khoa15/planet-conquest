@@ -1,5 +1,7 @@
 package com.planetconquest.game.text;
 
+import android.content.Context;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 
 import com.planetconquest.game.R;
@@ -7,19 +9,30 @@ import com.planetconquest.game.engine.EndReason;
 import com.planetconquest.game.engine.Notice;
 import com.planetconquest.game.session.GameSession;
 
-import java.util.Locale;
-
 /**
  * Cổng duy nhất tới chuỗi hiển thị (res/values/strings.xml). Engine và session chỉ phát mã + tham số
- * ({@link Notice}, {@link EndReason}, {@link GameSession.EndInfo}); lớp này đổi chúng ra chữ theo ngôn ngữ máy.
+ * ({@link Notice}, {@link EndReason}, {@link GameSession.EndInfo}); lớp này đổi chúng ra chữ theo {@link Language} đang chọn
+ * (đổi được lúc chạy qua {@link #setLanguage}; các màn hình giữ chung một đối tượng Texts nên thấy ngay).
  */
 public final class Texts {
-    private final Resources res;
-    /** Tiền tố nhãn hành tinh, lấy sẵn một lần vì được ghép chuỗi mỗi khung hình. */
-    public final String levelPrefix, hpPrefix;
+    private final Context context;
+    private Language language;
+    private Resources res;
+    /** Tiền tố nhãn hành tinh, lấy sẵn mỗi lần đổi ngôn ngữ vì được ghép chuỗi mỗi khung hình. */
+    public String levelPrefix, hpPrefix;
 
-    public Texts(Resources res) {
-        this.res = res;
+    public Texts(Context context, Language language) {
+        this.context = context.getApplicationContext();
+        setLanguage(language);
+    }
+
+    public Language language() { return language; }
+
+    public void setLanguage(Language language) {
+        this.language = language;
+        Configuration cfg = new Configuration(context.getResources().getConfiguration());
+        cfg.setLocale(language.locale());
+        res = context.createConfigurationContext(cfg).getResources();
         levelPrefix = res.getString(R.string.planet_level_prefix);
         hpPrefix = res.getString(R.string.planet_hp_prefix);
     }
@@ -91,7 +104,7 @@ public final class Texts {
             case ENDLESS_WIN: return s(R.string.end_endless_win_text, e.planets, e.time, e.best);
             case ENDLESS_LOSE: return s(R.string.end_endless_lose_text, reason(e.reason), e.cleared, e.best);
             case INTRO_WIN: return s(R.string.end_intro_win_text);
-            case WIN: return s(R.string.end_win_text, e.planets, e.time, levelLimit(e.level).toLowerCase(Locale.getDefault()));
+            case WIN: return s(R.string.end_win_text, e.planets, e.time, levelLimit(e.level).toLowerCase(language.locale()));
             default: return reason(e.reason);
         }
     }

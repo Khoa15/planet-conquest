@@ -11,6 +11,7 @@ import android.view.View;
 
 import com.planetconquest.game.audio.Sfx;
 import com.planetconquest.game.audio.Sound;
+import com.planetconquest.game.data.LanguageStore;
 import com.planetconquest.game.data.ProgressStore;
 import com.planetconquest.game.engine.Engine;
 import com.planetconquest.game.engine.input.Pointer;
@@ -23,6 +24,7 @@ import com.planetconquest.game.screen.Screen;
 import com.planetconquest.game.screen.ScreenHost;
 import com.planetconquest.game.screen.Screens;
 import com.planetconquest.game.session.GameSession;
+import com.planetconquest.game.text.Language;
 import com.planetconquest.game.text.Texts;
 import com.planetconquest.game.ui.DrawKit;
 import com.planetconquest.game.ui.StarField;
@@ -45,6 +47,7 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private final Engine eng = new Engine();
     private final Sfx sfx;
     private final ProgressStore progress;
+    private final LanguageStore languages;
     private final Texts texts;
     private final GameSession session;
     private final Screens screens;
@@ -56,12 +59,13 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     private String toastMsg;
     private long toastUntil;
 
-    public GameView(Context ctx, Sfx sfx, ProgressStore progress) {
+    public GameView(Context ctx, Sfx sfx, ProgressStore progress, LanguageStore languages) {
         super(ctx);
         dp = getResources().getDisplayMetrics().density;
         this.sfx = sfx;
         this.progress = progress;
-        texts = new Texts(getResources());
+        this.languages = languages;
+        texts = new Texts(ctx, languages.get());
         kit = new DrawKit(dp);
         stars = new StarField(kit);
         session = new GameSession(eng, progress);
@@ -80,6 +84,16 @@ public final class GameView extends View implements Choreographer.FrameCallback,
     @Override public Sfx sfx() { return sfx; }
     @Override public Texts texts() { return texts; }
     @Override public Screens screens() { return screens; }
+    @Override public Language language() { return texts.language(); }
+
+    @Override
+    public void cycleLanguage() {
+        Language next = texts.language().next();
+        languages.set(next);
+        texts.setLanguage(next);
+        current.layout();
+        invalidate();
+    }
 
     @Override
     public void go(Screen next) {

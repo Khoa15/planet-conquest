@@ -11,11 +11,11 @@ Bạn là một kỹ sư game/Android senior của dự án này.
 
 ## Mô tả game
 
-**Planet Conquest** là game chiến thuật casual chơi bằng **một ngón tay** trên Android, viết **native** bằng Java (Activity + Canvas), không dùng WebView hay framework đa nền tảng. Bản hiện tại: 0.4.0 (minSdk 21, targetSdk 34).
+**Planet Conquest** là game chiến thuật casual chơi bằng **một ngón tay** trên Android, viết **native** bằng Java (Activity + Canvas), không dùng WebView hay framework đa nền tảng. Bản hiện tại: 0.5.0 (minSdk 21, targetSdk 34).
 
 - Người chơi sở hữu một hành tinh và những viên đá quay quanh nó. **Khoanh vòng** để chọn đá, **kéo** tới hành tinh khác để tấn công, **chạm** để nâng cấp hành tinh, mục tiêu là chiếm toàn bộ bản đồ.
 - Các hành tinh AI cũng đánh nhau và đánh bạn.
-- Nội dung: màn Hướng dẫn, 9 màn có hạn chế riêng (không nâng cấp, sương mù, hồi chiêu, giới hạn tầm/sức chứa, thiên thạch, giới hạn thời gian...), và chế độ Endless.
+- Nội dung: **Hướng dẫn** (màn chơi đầu), 10 màn có hạn chế riêng (không nâng cấp, sương mù, hồi chiêu, giới hạn tầm/sức chứa, thiên thạch, giới hạn thời gian...), và **Endless** (màn chơi cuối, chơi vô hạn).
 - Luồng màn hình: Welcome → Chọn màn → Mô tả màn → Chơi ↔ Tạm dừng → Kết thúc. Tạm dừng là dừng thật (gỡ vòng lặp khung hình).
 - Thiết kế then chốt: engine là Java thuần tách khỏi Android để kiểm thử luật chơi trên JVM; giao diện nằm ở `screen/` và `ui/`.
 
@@ -57,7 +57,7 @@ Mọi giao diện mới (màn hình, HUD, hộp thoại, hiệu ứng, thành ph
 - **I - Interface Segregation**: interface nhỏ, tập trung (`Screen`, `ScreenHost`, `AiStrategy`, `LevelRule`); không bắt lớp cài đặt những phương thức nó không dùng.
 - **D - Dependency Inversion**: phụ thuộc vào abstraction, tiêm phụ thuộc qua constructor (như `MainActivity` tạo `Sfx` và `ProgressStore` rồi đưa vào `GameView`). Không dùng singleton/static toàn cục để giấu phụ thuộc.
 - `engine/` là Java thuần, **không import `android.*`**, để kiểm thử được trên JVM. Mọi thứ phụ thuộc Android nằm ngoài `engine/`.
-- Chữ hiển thị chỉ nằm trong `res/values/strings.xml`, tra qua `text/Texts`; engine chỉ phát mã thông báo (`Msg`), không chứa chuỗi.
+- Chữ hiển thị chỉ nằm trong `res/values/strings.xml` (tiếng Anh, mặc định) và `res/values-vi/strings.xml` (tiếng Việt); thêm/sửa chuỗi phải cập nhật cả hai. Tra qua `text/Texts`; engine chỉ phát mã thông báo (`Msg`), không chứa chuỗi.
 - Không số/chuỗi "ma thuật" rải rác: màu vào `Palette`, hằng số vào hằng có tên.
 - Đặt tên lớp theo vai trò, mỗi file một lớp công khai, nhỏ gọn; không thêm trừu tượng khi chưa có nhu cầu thật.
 - Thêm/sửa luật chơi phải kèm kiểm thử JUnit trong `app/src/test/` (chạy `./build.sh test`).
@@ -76,7 +76,7 @@ planet-conquest/
   docs/, screenshots/   Tài liệu, ảnh
   app/src/main/
     AndroidManifest.xml
-    res/                mipmap (icon), raw (âm thanh), values/strings.xml (mọi chuỗi)
+    res/                mipmap (icon), raw (âm thanh), values/strings.xml (mọi chuỗi, tiếng Anh mặc định), values-vi/strings.xml (tiếng Việt)
     java/com/planetconquest/game/
       MainActivity      Toàn màn hình, vòng đời; tạo Sfx, ProgressStore rồi đưa vào GameView
       GameView          Vòng lặp khung hình; chuyển cảm ứng/vẽ cho Screen hiện tại; thông báo nổi
@@ -88,14 +88,14 @@ planet-conquest/
                         LevelPlanet, LevelPlanetRenderer, LevelPath (bản đồ chọn màn),
                         WelcomePlayIcon, WelcomeCompass (nút trên màn Welcome)
       audio/            Sfx, Sound, MusicTrack
-      data/             ProgressStore (SharedPreferences)
-      text/             Texts: cổng duy nhất tra chuỗi
+      data/             ProgressStore, LanguageStore (SharedPreferences)
+      text/             Texts: cổng duy nhất tra chuỗi (đổi ngôn ngữ lúc chạy); Language (VI, EN; Java thuần, có JUnit)
       engine/           Java thuần, không phụ thuộc Android
         Engine, GameEvent, EndReason, Haptic, Msg, Notice
         model/          Planet, PlanetVisual, Rock, Asteroid, Body, Faction, AiState, Selection,
                         Particle, FloatText, OrbitPattern
         rules/          LevelRule, RuleSet và các hạn chế (NoUpgrade, NoProduction, Fog, Cooldown,
-                        Range, CapacityCap, EnemyProduction, TimeLimit, AsteroidImpact)
+                        Range, SlowRocks, CapacityCap, EnemyProduction, TimeLimit, AsteroidImpact)
         ai/             AiStrategy, DefaultAi, PassiveAi
         input/          GestureController, GestureMode, Pointer
         physics/        CollisionGrid
@@ -122,3 +122,11 @@ Quy ước đặt code mới:
 
 Không tạo gói/thư mục mới ngoài sơ đồ trên khi chưa cần; nếu phải thêm, cập nhật mục này trong cùng commit.
 Khi cấu trúc thư mục thay đổi, cập nhật cả CLAUDE.md và README.md.
+
+## 4. Quy tắc đặt hành tinh trên bản đồ
+
+- **Lề an toàn**: tâm mọi hành tinh phải cách viền màn hình **≥ 72dp theo chiều ngang** (`Level.edgeMarginX`, truyền vào `MapGenerator.layout`) và **≥ 100dp theo chiều dọc** (cố định bởi `MapGenerator.top()` / `bottom()`). Dọc 100dp khớp `MapGenerator.top()` / `bottom()` (chỗ cho HUD và thanh điều hướng); ngang 72dp = dải quỹ đạo ngoài cùng (~38dp) + chỗ đặt ngón tay và vùng vuốt cạnh của Android (~30dp). Đặt sát viền thì khó kéo/khoảng và bị cắt quỹ đạo, nhãn đích.
+- Vùng đặt hành tinh vì vậy là `[72, W-72] x [100, H-100]` (màn nào đặt `Level.edgeMarginX` thì `padX` bằng lề đó).
+- Màn mới bắt buộc theo quy tắc này. Màn cũ giữ bố cục hiện tại, chỉ đổi khi user yêu cầu (đổi lề làm dịch bản đồ và cân bằng).
+- Khi cần khoảng cách giữa các hành tinh lớn trong vùng hẹp, **thu nhỏ vật thể** (`Level.bodyScale`, đã nối vào bán kính hành tinh, quỹ đạo `OrbitPattern`, đá và chữ) thay vì đặt sát viền.
+- Mọi prototype có bố cục bản đồ (`planet-ui/`) phải đặt hằng `EDGE_MARGIN_X` / `EDGE_MARGIN_Y` và dùng cùng vùng đặt này để đối chiếu với native.

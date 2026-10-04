@@ -18,9 +18,12 @@ public final class OrbitPattern {
 
     private final float gap, first;
 
-    public OrbitPattern(float dp, float unit) {
-        gap = Math.max(6 * dp, unit * .017f);
-        first = Math.max(9 * dp, unit * .026f);
+    public OrbitPattern(float dp, float unit) { this(dp, unit, 1f); }
+
+    /** scale < 1: quỹ đạo thu nhỏ theo hành tinh (Level.bodyScale). */
+    public OrbitPattern(float dp, float unit, float scale) {
+        gap = Math.max(6 * dp * scale, unit * .017f * scale);
+        first = Math.max(9 * dp * scale, unit * .026f * scale);
     }
 
     /** Bán kính ngoài cùng mà một viên đá có thể tới, tính từ tâm hành tinh bán kính planetRadius. */
