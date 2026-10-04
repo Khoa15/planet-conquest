@@ -22,6 +22,10 @@ public final class DrawKit {
     public float w, h;
     public final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), stroke = new Paint(Paint.ANTI_ALIAS_FLAG), txt = new Paint(Paint.ANTI_ALIAS_FLAG);
     public final Paint.FontMetrics fm = new Paint.FontMetrics();
+    /** Nét chấm cố định (vùng tầm, đường nối màn): dùng chung, không tạo mới mỗi khung hình. */
+    public final DashPathEffect dotted;
+    private static final int MARCH_STEPS = 56;         // độ phân giải của nét đứt chạy (~0,25dp/bước): mắt thường không phân biệt được
+    private final DashPathEffect[] march = new DashPathEffect[MARCH_STEPS];
     public final Path path = new Path();
     public final RectF tmp = new RectF();
     public final Typeface reg = Typeface.create("sans-serif", Typeface.NORMAL),
@@ -30,6 +34,7 @@ public final class DrawKit {
 
     public DrawKit(float dp) {
         this.dp = dp;
+        dotted = new DashPathEffect(new float[]{3 * dp, 8 * dp}, 0);
         fill.setStyle(Paint.Style.FILL);
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeCap(Paint.Cap.ROUND);
@@ -73,7 +78,11 @@ public final class DrawKit {
     }
 
     public void dashed(boolean on, float phase) {
-        stroke.setPathEffect(on ? new DashPathEffect(new float[]{7 * dp, 7 * dp}, 14 * dp - (phase * 50 * dp) % (14 * dp)) : null);
+        if (!on) { stroke.setPathEffect(null); return; }
+        float cycle = 14 * dp, frac = (phase * 50 * dp) % cycle / cycle;      // 0..1 trong một chu kỳ nét đứt
+        int i = Math.min(MARCH_STEPS - 1, (int) (frac * MARCH_STEPS));
+        if (march[i] == null) march[i] = new DashPathEffect(new float[]{7 * dp, 7 * dp}, cycle - i * cycle / MARCH_STEPS);
+        stroke.setPathEffect(march[i]);
     }
 
     public void arc(Canvas c, float x, float y, float r, float frac) {

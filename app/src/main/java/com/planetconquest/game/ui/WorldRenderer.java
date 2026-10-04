@@ -1,7 +1,6 @@
 package com.planetconquest.game.ui;
 
 import android.graphics.Canvas;
-import android.graphics.DashPathEffect;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.graphics.Path;
@@ -32,16 +31,19 @@ import static com.planetconquest.game.ui.Palette.*;
 
 /** Vẽ thế giới game: hành tinh, quỹ đạo, thiên thạch, đá, hạt, vòng khoanh, đường kéo và gợi ý của màn Hướng dẫn. */
 public final class WorldRenderer extends Painter {
+    private static final float[] BANDS = {-.4f, .05f, .5f};    // vị trí các dải ngang trên thân hành tinh (theo bán kính)
     private final Engine eng;
     private final GameSession session;
     private final Texts tx;
     private final float[] dotX = new float[64], dotY = new float[64];
     private final int[] FC = Faction.COLORS, FL = Faction.LIGHT, FD = Faction.DARK;
     private final ArrayList<Planet> tmpPlanets = new ArrayList<Planet>();
+    private final PlanetLabels labels;
 
     public WorldRenderer(DrawKit kit, Engine eng, GameSession session, Texts tx) {
         super(kit);
         this.tx = tx;
+        this.labels = new PlanetLabels(tx);
         this.eng = eng;
         this.session = session;
     }
@@ -116,7 +118,7 @@ public final class WorldRenderer extends Painter {
     private void drawRange(Canvas c, ArrayList<Planet> srcs, float a) {
         float rp = eng.rangePx();
         if (Float.isInfinite(rp)) return;
-        stroke.setPathEffect(new DashPathEffect(new float[]{3 * dp, 8 * dp}, 0));
+        stroke.setPathEffect(kit.dotted);
         stroke.setStrokeWidth(1.5f * dp);
         stroke.setColor(alpha(C_MUTED, a));
         for (Planet s : srcs) c.drawCircle(s.x(), s.y(), rp, stroke);
@@ -142,8 +144,7 @@ public final class WorldRenderer extends Painter {
         c.clipPath(path);
         stroke.setColor(0x24000000);
         stroke.setStrokeWidth(R * .13f);
-        float[] bands = {-.4f, .05f, .5f};
-        for (float k : bands) {
+        for (float k : BANDS) {
             path.reset();
             path.moveTo(x - R, y + R * k);
             path.quadTo(x, y + R * k + R * .2f * sin(seed + k * 5), x + R, y + R * k);
@@ -176,7 +177,7 @@ public final class WorldRenderer extends Painter {
             stroke.setStrokeWidth(3 * dp); stroke.setColor(alpha(C_DANGER, .45f + .45f * Math.abs(sin(eng.clock() * 4))));
             c.drawCircle(p.x(), p.y(), R + 12 * dp, stroke);
         }
-        String n = fg ? "?" : String.valueOf(p.rocks());
+        String n = fg ? "?" : labels.num(p.rocks());
         if (eng.bodyScale() < 1) {                                             // hành tinh nhỏ: chỉ còn số đá ở giữa
             float one = Math.max(11 * dp, R * .8f);
             text(c, n, p.x() + dp, p.y() + dp, one, 0x73000000, tfBold, Paint.Align.CENTER);
@@ -186,8 +187,8 @@ public final class WorldRenderer extends Painter {
         float big = Math.max(13 * dp, R * .6f), small = Math.max(8 * dp, R * .27f);
         text(c, n, p.x() + dp, p.y() - R * .24f + dp, big, 0x73000000, tfBold, Paint.Align.CENTER);
         text(c, n, p.x(), p.y() - R * .24f, big, 0xFFFFFFFF, tfBold, Paint.Align.CENTER);
-        text(c, fg ? tx.levelPrefix + "?" : tx.levelPrefix + p.level() + "/" + eng.maxLvl(p), p.x(), p.y() + R * .28f, small, 0xD9FFFFFF, tfBold, Paint.Align.CENTER);
-        text(c, tx.hpPrefix + (fg ? "?" : String.valueOf(p.hp())), p.x(), p.y() + R * .6f, small, 0xB3FFFFFF, tfBold, Paint.Align.CENTER);
+        text(c, fg ? tx.levelPrefix + "?" : labels.level(p.level(), eng.maxLvl(p)), p.x(), p.y() + R * .28f, small, 0xD9FFFFFF, tfBold, Paint.Align.CENTER);
+        text(c, fg ? tx.hpPrefix + "?" : labels.hp(p.hp()), p.x(), p.y() + R * .6f, small, 0xB3FFFFFF, tfBold, Paint.Align.CENTER);
     }
 
     private void drawOrbit(Canvas c, Planet p) {
