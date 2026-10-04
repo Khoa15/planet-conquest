@@ -11,7 +11,7 @@ Bạn là một kỹ sư game/Android senior của dự án này.
 
 ## Mô tả game
 
-**Planet Conquest** là game chiến thuật casual chơi bằng **một ngón tay** trên Android, viết **native** bằng Java (Activity + Canvas), không dùng WebView hay framework đa nền tảng. Bản hiện tại: 0.2.0 (minSdk 21, targetSdk 34).
+**Planet Conquest** là game chiến thuật casual chơi bằng **một ngón tay** trên Android, viết **native** bằng Java (Activity + Canvas), không dùng WebView hay framework đa nền tảng. Bản hiện tại: 0.4.0 (minSdk 21, targetSdk 34).
 
 - Người chơi sở hữu một hành tinh và những viên đá quay quanh nó. **Khoanh vòng** để chọn đá, **kéo** tới hành tinh khác để tấn công, **chạm** để nâng cấp hành tinh, mục tiêu là chiếm toàn bộ bản đồ.
 - Các hành tinh AI cũng đánh nhau và đánh bạn.
@@ -70,7 +70,7 @@ planet-conquest/
   README.md             Mô tả game, cách build, điều khiển
   build.sh              Build APK không cần Gradle (./build.sh | install | test)
   build.gradle, app/build.gradle, settings.gradle, gradle.properties   Cấu hình Gradle
-  planet-ui/            PROTOTYPE giao diện bằng HTML/CSS/JS (index.html, style.css, planet.js, levels.html, levels.js, README.md)
+  planet-ui/            PROTOTYPE giao diện bằng HTML/CSS/JS (index.html, style.css, planet.js, levels.html, levels.js, welcome.html, welcome.js, README.md)
   prototype/web/        Prototype HTML5 ban đầu, chỉ tham chiếu luật chơi
   tools/gen_audio.py    Sinh âm thanh
   docs/, screenshots/   Tài liệu, ảnh
@@ -85,14 +85,15 @@ planet-conquest/
                         (+ Screen, BaseScreen, ScreenHost, Screens)
       session/          GameSession: màn hiện tại, Endless, bước Hướng dẫn, dữ liệu màn kết thúc
       ui/               UiButton, Dialog, DrawKit, Painter, Palette, StarField, WorldRenderer, WelcomeScene,
-                        LevelPlanet, LevelPlanetRenderer, LevelPath (bản đồ chọn màn)
+                        LevelPlanet, LevelPlanetRenderer, LevelPath (bản đồ chọn màn),
+                        WelcomePlayIcon, WelcomeCompass (nút trên màn Welcome)
       audio/            Sfx, Sound, MusicTrack
       data/             ProgressStore (SharedPreferences)
       text/             Texts: cổng duy nhất tra chuỗi
       engine/           Java thuần, không phụ thuộc Android
         Engine, GameEvent, EndReason, Haptic, Msg, Notice
         model/          Planet, PlanetVisual, Rock, Asteroid, Body, Faction, AiState, Selection,
-                        Particle, FloatText
+                        Particle, FloatText, OrbitPattern
         rules/          LevelRule, RuleSet và các hạn chế (NoUpgrade, NoProduction, Fog, Cooldown,
                         Range, CapacityCap, EnemyProduction, TimeLimit, AsteroidImpact)
         ai/             AiStrategy, DefaultAi, PassiveAi

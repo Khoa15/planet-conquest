@@ -35,7 +35,7 @@ public final class WorldRenderer extends Painter {
     private final Engine eng;
     private final GameSession session;
     private final Texts tx;
-    private final float[] dotX = new float[64], dotY = new float[64], rings = new float[16];
+    private final float[] dotX = new float[64], dotY = new float[64];
     private final int[] FC = Faction.COLORS, FL = Faction.LIGHT, FD = Faction.DARK;
     private final ArrayList<Planet> tmpPlanets = new ArrayList<Planet>();
 
@@ -64,8 +64,7 @@ public final class WorldRenderer extends Painter {
             }
             case 1: {
                 if (eng.selection() != null) break;
-                int nr = eng.orbitRings(me, rings);
-                float rad = (nr > 0 ? rings[nr - 1] : me.radius()) + 16 * dp;
+                float rad = eng.orbitOuterRadius(me) + 16 * dp;
                 dashed(true, eng.clock());
                 c.drawCircle(me.x(), me.y(), rad, stroke);
                 dashed(false, 0);
@@ -182,10 +181,7 @@ public final class WorldRenderer extends Painter {
 
     private void drawOrbit(Canvas c, Planet p) {
         if (eng.fogged(p)) return;
-        int nr = eng.orbitRings(p, rings), dc = eng.orbitDots(p, dotX, dotY), hl = eng.highlightCount(p);
-        stroke.setStrokeWidth(dp);
-        stroke.setColor(alpha(FC[p.owner()], .12f));
-        for (int i = 0; i < nr; i++) c.drawCircle(p.x(), p.y(), rings[i], stroke);
+        int dc = eng.orbitDots(p, dotX, dotY), hl = eng.highlightCount(p);
         float dot = Math.max(1.8f * dp, eng.unit() * .0055f);
         int normal = alpha(FC[p.owner()], .92f);
         for (int i = 0; i < dc; i++) {

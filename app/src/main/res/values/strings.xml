@@ -3,9 +3,6 @@
     <string name="app_name">Planet Conquest</string>
 
     <!-- Nút -->
-    <string name="btn_play_now">Chơi ngay</string>
-    <string name="btn_map">Bản đồ</string>
-    <string name="btn_tutorial">Hướng dẫn</string>
     <string name="btn_cancel">Hủy</string>
     <string name="btn_start">Bắt đầu</string>
     <string name="btn_back">Quay lại</string>
@@ -19,8 +16,6 @@
     <!-- Welcome -->
     <string name="title_planet" translatable="false">Planet</string>
     <string name="title_conquest" translatable="false">Conquest</string>
-    <string name="tagline">Chinh phục thiên hà bằng một ngón tay</string>
-    <string name="best_endless">Kỷ lục Endless: %1$d bản đồ</string>
     <string name="version">Phiên bản %1$s</string>
 
     <!-- Chọn màn / mô tả -->
