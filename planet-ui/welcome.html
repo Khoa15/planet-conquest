@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planet Conquest – Welcome</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  canvas { max-width: 100%; height: auto; cursor: pointer; touch-action: none; transition: none; }
+  .log { font-size: 12px; color: #8f99c8; min-height: 18px; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="stage" width="360" height="780"></canvas>
+  <section class="panel">
+    <h1>Welcome</h1>
+    <label>Kiểu nút
+      <select id="mode"><option value="planet" selected>Hướng 3: hành tinh + la bàn</option><option value="rect">Bản hiện tại: nút chữ nhật</option></select>
+    </label>
+    <label>Màn tiếp theo (chỉ hiện ở dòng log khi chạm)
+      <select id="next"><option value="0">Hướng dẫn (chưa từng chơi)</option><option value="3" selected>Màn 3 · Mùa khô</option><option value="9">Màn 9 · Đối thủ tăng tốc</option><option value="-1">Endless (đã qua hết)</option></select>
+    </label>
+    <label>Bố cục nút phụ
+      <select id="pos"><option value="bar" selected>Hàng dưới: âm thanh trái, bản đồ phải</option><option value="center">La bàn giữa dưới, âm thanh góc trên phải</option></select>
+    </label>
+    <hr>
+    <label>Kích thước màn hình (dp)
+      <select id="size"><option value="780" selected>360 × 780 (Genymotion, 19.5:9)</option><option value="640">360 × 640 (16:9)</option><option value="800">360 × 800</option></select>
+    </label>
+    <label>Thời gian cảnh (<b id="tV"></b>)
+      <input id="t" type="range" min="0" max="48" step="0.1" value="0">
+    </label>
+    <label>Tốc độ (<b id="speedV">×1</b>)
+      <input id="speed" type="range" min="0" max="3" step="0.25" value="1">
+    </label>
+    <label class="row"><input id="pause" type="checkbox"> Tạm dừng</label>
+    <div class="btns"><button id="jumpLaunch">Tới lúc phóng đá</button><button id="tapPlay">Mô phỏng chạm hành tinh</button><button id="tapMap">Mô phỏng chạm la bàn</button></div>
+    <div class="log" id="log"></div>
+    <p style="font-size:12px;color:#8f99c8;margin:0">Nhấn giữ: hành tinh/la bàn nhỏ lại. Thả trong vùng nút: hành tinh phồng lên và phóng đá, la bàn quay kim rồi mở bản đồ. Nền dựng 1-1 từ <code>WelcomeScene.java</code>, <code>StarField.java</code>, <code>WelcomeScreen.draw</code> và nút <code>DrawKit.drawButton</code>.
+      Bố cục ngẫu nhiên dùng lại <code>java.util.Random</code> (hạt giống 7 và 11) nên trùng hệt bản Android.</p>
+  </section>
+</main>
+<script src="welcome.js"></script>
+</body>
+</html>
