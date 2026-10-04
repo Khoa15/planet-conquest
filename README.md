@@ -1,7 +1,7 @@
 # Planet Conquest
 
 Game chiến thuật casual chơi một ngón tay trên Android, viết **native** bằng Java (Activity + Canvas),
-không dùng WebView hay framework đa nền tảng. Bản hiện tại: **0.4.0**.
+không dùng WebView hay framework đa nền tảng. Bản hiện tại: **0.5.0**.
 
 Bạn sở hữu một hành tinh và những viên đá quay quanh nó. Khoanh vòng để chọn đá, kéo tới hành tinh khác để
 tấn công, nâng cấp hành tinh, và chiếm toàn bộ bản đồ. Các hành tinh AI cũng đánh nhau và đánh bạn.
@@ -9,7 +9,7 @@ tấn công, nâng cấp hành tinh, và chiếm toàn bộ bản đồ. Các h�
 ## Cài nhanh
 
 ```bash
-adb install -r planet-conquest-0.4.0.apk
+adb install -r planet-conquest-0.5.0.apk
 ```
 
 APK là bản debug (ký bằng debug keystore), minSdk 21 (Android 5.0), targetSdk 34.
@@ -21,7 +21,7 @@ APK là bản debug (ký bằng debug keystore), minSdk 21 (Android 5.0), target
 Cần JDK 17 và Android SDK có `platforms/android-*` cùng `build-tools` (aapt, dx hoặc d8, zipalign, apksigner).
 
 ```bash
-./build.sh            # build/planet-conquest-0.4.0.apk
+./build.sh            # build/planet-conquest-0.5.0.apk
 ./build.sh install    # build, cài và mở app qua adb
 ./build.sh test       # chạy kiểm thử engine trên JVM, không cần thiết bị
 ```
