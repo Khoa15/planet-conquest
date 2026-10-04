@@ -1,8 +1,6 @@
 package com.planetconquest.game.ui;
 
 import android.graphics.Canvas;
-import android.graphics.RadialGradient;
-import android.graphics.Shader;
 import android.graphics.Path;
 import android.graphics.Paint;
 
@@ -38,6 +36,7 @@ public final class WorldRenderer extends Painter {
     private final float[] dotX = new float[64], dotY = new float[64];
     private final int[] FC = Faction.COLORS, FL = Faction.LIGHT, FD = Faction.DARK;
     private final ArrayList<Planet> tmpPlanets = new ArrayList<Planet>();
+    private final PlanetShaders shaders = new PlanetShaders();
     private final PlanetLabels labels;
 
     public WorldRenderer(DrawKit kit, Engine eng, GameSession session, Texts tx) {
@@ -133,10 +132,14 @@ public final class WorldRenderer extends Painter {
         // (hạt vỡ mờ dần, thông báo fade trong GameView, chấm quỹ đạo alpha .92...). Nên độ sáng của hành tinh
         // chạy theo nhịp fade của những thứ đó. Luôn đặt lại màu đục trước khi vẽ bằng shader.
         fill.setColor(0xFFFFFFFF);
-        fill.setShader(new RadialGradient(x, y, R * 2.1f, new int[]{alpha(col, .34f), alpha(col, .34f), alpha(col, 0)}, new float[]{0, .43f, 1}, Shader.TileMode.CLAMP));
-        c.drawCircle(x, y, R * 2.1f, fill);
-        fill.setShader(new RadialGradient(x - R * .35f, y - R * .4f, R * 1.45f, new int[]{FL[owner], col, FD[owner]}, new float[]{0, .5f, 1}, Shader.TileMode.CLAMP));
-        c.drawCircle(x, y, R, fill);
+        PlanetShaders.Pair sh = shaders.get(owner, R, col, FL[owner], FD[owner]);   // shader dựng sẵn quanh (0,0): dịch canvas thay vì tạo mới mỗi khung
+        c.save();
+        c.translate(x, y);
+        fill.setShader(sh.glow);
+        c.drawCircle(0, 0, R * 2.1f, fill);
+        fill.setShader(sh.body);
+        c.drawCircle(0, 0, R, fill);
+        c.restore();
         fill.setShader(null);
         c.save();
         path.reset();
