@@ -1,7 +1,6 @@
 package com.planetconquest.game.ui;
 
 import android.graphics.Canvas;
-import android.graphics.DashPathEffect;
 import android.graphics.LinearGradient;
 import android.graphics.Path;
 import android.graphics.Shader;
@@ -47,7 +46,7 @@ public final class LevelPath {
     public void draw(Canvas c, DrawKit kit, int colA, int colB, float lit, float clock) {
         float dp = kit.dp;
         build(kit.path);
-        kit.stroke.setPathEffect(new DashPathEffect(new float[]{3 * dp, 8 * dp}, 0));
+        kit.stroke.setPathEffect(kit.dotted);
         kit.stroke.setStrokeWidth((WIDTH - 1) * dp);
         kit.stroke.setColor(0x47A0AFFF);
         c.drawPath(kit.path, kit.stroke);

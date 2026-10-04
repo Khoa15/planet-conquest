@@ -328,7 +328,7 @@ function frame(now) {
 function showInfo(i) {
   const L = LEVELS[i], info = document.getElementById('info');
   const st = i === ENDLESS ? (state.endlessBest ? '<span class="ok">Kỷ lục 12</span>' : '') : state.cleared[i] ? '<span class="ok">Đã qua</span>' : '';
-  const planets = i === ENDLESS ? '3–10 hành tinh' : `${L.planets} hành tinh`;
+  const planets = i === ENDLESS ? '4–10 hành tinh' : `${L.planets} hành tinh`;
   info.innerHTML = `<b>${i === 0 ? '' : i === ENDLESS ? '∞ ' : 'Màn ' + i + ' · '}${L.name}</b>${st}<br>${L.limit}<br>${planets}`;
 }
 cv.addEventListener('click', e => {

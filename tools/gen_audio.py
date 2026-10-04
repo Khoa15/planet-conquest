@@ -29,8 +29,8 @@ def write(name, x, vol=0.7, loop=False):
     with wave.open(p, "wb") as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x*32767).astype("<i2").tobytes())
     os.makedirs(OUT, exist_ok=True)
-    if loop:   # nhạc nền: PCM mono 32 kHz để AudioTrack lặp vòng không khe hở
-        subprocess.run(["ffmpeg","-y","-loglevel","error","-i",p,"-ac","1","-ar","32000","-c:a","pcm_s16le",os.path.join(OUT,name+".wav")], check=True)
+    if loop:   # nhạc nền: Opus mono 48 kbps; app giải mã ra PCM (audio/PcmDecoder) rồi AudioTrack lặp vòng
+        subprocess.run(["ffmpeg","-y","-loglevel","error","-i",p,"-c:a","libopus","-application","audio","-b:a","48k","-ac","1","-ar","48000",os.path.join(OUT,name+".ogg")], check=True)
     else:
         subprocess.run(["ffmpeg","-y","-loglevel","error","-i",p,"-c:a","vorbis","-strict","-2","-ac","2","-b:a","96k",os.path.join(OUT,name+".ogg")], check=True)
     os.unlink(p)

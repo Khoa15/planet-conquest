@@ -25,7 +25,10 @@ public final class MapGenerator {
     public float[][] layout(Random r, int n, float rangeP) { return layout(r, n, rangeP, 0, 0); }
 
     /** Như trên; edgeMarginDp > 0 đặt lề ngang tối thiểu (dp) và minGapUnit > 0 đặt khoảng cách tối thiểu giữa hai hành tinh (theo unit, tự hạ khi bản đồ đông). */
-    public float[][] layout(Random r, int n, float rangeP, float edgeMarginDp, float minGapUnit) {
+    public float[][] layout(Random r, int n, float rangeP, float edgeMarginDp, float minGapUnit) { return layout(r, n, rangeP, edgeMarginDp, minGapUnit, false); }
+
+    /** Như trên; randomPlayer = true thì hành tinh người chơi (chỉ số 0) cũng được đặt ngẫu nhiên thay vì ở đáy giữa. */
+    public float[][] layout(Random r, int n, float rangeP, float edgeMarginDp, float minGapUnit, boolean randomPlayer) {
         float top = top(), bottom = bottom();
         float padX = edgeMarginDp > 0 ? edgeMarginDp * dp : Math.max(48 * dp, unit * .13f), y0 = top + 22 * dp, y1 = bottom - 6 * dp;
         float area = (W - 2 * padX) * (y1 - y0);
@@ -35,7 +38,8 @@ public final class MapGenerator {
         float base = n >= 9 ? .056f : n >= 7 ? .062f : .07f;
         float[] xs = new float[n], ys = new float[n];
         for (int attempt = 0; attempt < 80; attempt++) {
-            xs[0] = W / 2; ys[0] = y1 - 20 * dp;
+            if (randomPlayer) { xs[0] = padX + r.nextFloat() * (W - 2 * padX); ys[0] = y0 + r.nextFloat() * (y1 - y0); }
+            else { xs[0] = W / 2; ys[0] = y1 - 20 * dp; }
             int cnt = 1;
             boolean ok = true;
             for (int i = 1; i < n && ok; i++) {
@@ -70,6 +74,11 @@ public final class MapGenerator {
             int c = (i - 1) % cols, rr = (i - 1) / cols;
             xs[i] = padX + (c + .5f) / cols * (W - 2 * padX);
             ys[i] = y0 + (rr + .5f) / rows * (y1 - y0 - 120 * dp);
+        }
+        if (randomPlayer && n > 1) {                      // lưới dự phòng: đổi chỗ người chơi với một ô ngẫu nhiên
+            int j = 1 + r.nextInt(n - 1);
+            float tx = xs[0], ty = ys[0];
+            xs[0] = xs[j]; ys[0] = ys[j]; xs[j] = tx; ys[j] = ty;
         }
         return pack(r, xs, ys, n, base, top, bottom);
     }

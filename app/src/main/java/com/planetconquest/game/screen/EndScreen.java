@@ -33,7 +33,7 @@ final class EndScreen extends BaseScreen {
             @Override public void run() { next(); }
         });
         if (info.hasAgain()) dialog.button(tx.s(R.string.btn_restart), !info.hasNext() ? UiButton.Style.PRIMARY : UiButton.Style.SECONDARY, new Runnable() {
-            @Override public void run() { host.session().again(); host.go(play); }
+            @Override public void run() { host.session().restart(); host.go(play); }
         });
         dialog.button(tx.s(R.string.btn_pick_level), UiButton.Style.GHOST, new Runnable() {
             @Override public void run() { host.go(host.screens().levels()); }

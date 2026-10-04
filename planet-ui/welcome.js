@@ -484,6 +484,10 @@ const HINT_RING_GAP = 50, HINT_RING_PULSE = 3;                     // vòng vàn
 const PLAY_ICON_H = .56, PLAY_DISC_R = .56, PLAY_DISC_ALPHA = .58; // biểu tượng play: tam giác cao .56 × bán kính hành tinh trên đĩa lõi bán kính .56, đặt đúng tâm
 const PLAY_PULSE = .03;                                            // nhịp thở 3%
 const SOUND_BTN = 44, SOUND_MARGIN = 16, SOUND_TOP = 18;        // nút âm thanh dạng icon vuông 44dp (như nút Back)
+const LANG_W = 58, LANG_H = 34, LANG_MARGIN = 16, LANG_TOP = 18, LANG_RADIUS = 12; // nút ngôn ngữ dạng pill 58×34dp góc trên phải: quả cầu + mã VI/EN, bấm để đổi
+const LANG_GLOBE_R = 7, LANG_GAP = 6, LANG_TEXT = 13;            // quả cầu bán kính 7dp, cách chữ 6dp, chữ 13dp; cả cụm canh giữa nút, cùng tâm dọc
+const LANGS = ['vi', 'en'], LANG_CODES = { vi: 'VI', en: 'EN' };
+const VERSION_LABEL = { vi: 'Phiên bản', en: 'Version' };
 const BAR_MARGIN = 28, BAR_Y_FROM_BOTTOM = 76;                  // bố cục 'bar': hai nút phụ cùng một hàng dưới, cách mép 28dp, tâm cách đáy 76dp
 const TAP_SECONDS = .9, BURST_ROCKS = 16, BURST_SPEED = 300, TAP_POP = .09;
 const COMPASS_R = 34, COMPASS_Y_FROM_BOTTOM = 100;              // bố cục 'center': la bàn giữa dưới
@@ -511,7 +515,7 @@ function button(label, x0, y0, x1, y1, style, pressed) {
   ctx.restore();
 }
 
-const state = { sound: false,  t: 0, pause: false, speed: 1, mode: 'planet', next: 3, pos: 'bar', hint: true, pressed: null, inside: false, playT: -1, mapT: -1, rocks: [] };
+const state = { lang: 'vi', sound: false,  t: 0, pause: false, speed: 1, mode: 'planet', next: 3, pos: 'bar', hint: true, pressed: null, inside: false, playT: -1, mapT: -1, rocks: [] };
 const easeOut = u => 1 - Math.pow(1 - u, 3);
 
 // Nút chữ nhật (bản hiện tại)
@@ -617,6 +621,26 @@ function drawSoundButton() {
   ctx.restore();
 }
 
+function langRect() { return [W - LANG_MARGIN - LANG_W, LANG_TOP, W - LANG_MARGIN, LANG_TOP + LANG_H]; }
+
+/** Nút ngôn ngữ (UiButton.Style.ICON kèm nhãn): quả cầu (vòng tròn, kinh tuyến, xích đạo) + mã ngôn ngữ đang dùng. */
+function drawLangButton() {
+  const [x0, y0] = langRect(), cx = x0 + LANG_W / 2, cy = y0 + LANG_H / 2, pressed = state.pressed === 'lang' && state.inside;
+  ctx.save();
+  if (pressed) { ctx.translate(cx, cy); ctx.scale(.96, .96); ctx.translate(-cx, -cy); }
+  ctx.fillStyle = argb(pressed ? 0xF01E2650 : 0xE00E122A); ctx.beginPath(); ctx.roundRect(x0, y0, LANG_W, LANG_H, LANG_RADIUS); ctx.fill();
+  ctx.strokeStyle = alpha(C_YOU, .55); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.roundRect(x0, y0, LANG_W, LANG_H, LANG_RADIUS); ctx.stroke();
+  const ink = argb(C_YOU), r = LANG_GLOBE_R, code = LANG_CODES[state.lang];
+  ctx.font = `800 ${LANG_TEXT}px Roboto, "Helvetica Neue", Arial, sans-serif`;
+  const tw = Math.max(...LANGS.map(l => ctx.measureText(LANG_CODES[l]).width)), start = cx - (2 * r + LANG_GAP + tw) / 2, gx = start + r;   // đo theo mã rộng nhất: cụm không nhảy khi đổi VI/EN
+  ctx.strokeStyle = ink; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(gx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(gx, cy, r * .42, r, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(gx - r, cy); ctx.lineTo(gx + r, cy); ctx.stroke();
+  text(code, start + 2 * r + LANG_GAP, cy, LANG_TEXT, C_INK, 'left', '800');
+  ctx.restore();
+}
+
 function drawScreen(dt) {
   const planetMode = state.mode === 'planet';
   Scene.setPlayFx(planetMode ? playFx() : null);
@@ -625,10 +649,11 @@ function drawScreen(dt) {
   const ty = Math.max(80 * DP, H * .13);
   text('Planet', W / 2, ty, 44, C_INK, 'center', '900'); text('Conquest', W / 2, ty + 48, 44, C_INK, 'center', '900');
   if (!planetMode) text('Kỷ lục Endless: 1 bản đồ', W / 2, H - 44, 12.5, C_MUTED, 'center', '400');   // hướng 3 bỏ dòng này
-  text('Phiên bản 0.3.0', W / 2, H - 24, 11.5, alpha(C_MUTED, .7), 'center', '400');
+  text(VERSION_LABEL[state.lang] + ' 0.3.0', W / 2, H - 24, 11.5, alpha(C_MUTED, .7), 'center', '400');
   if (planetMode) { drawPlayLabel(); drawBurst(dt); drawCompass(); }
   else for (const b of rectButtons()) button(b.label, ...b.r, b.style, state.pressed === b.id && state.inside);
   drawSoundButton();
+  drawLangButton();
 }
 
 // ---------- Vòng lặp & điều khiển ----------
@@ -647,6 +672,8 @@ const $ = id => document.getElementById(id);
 const log = m => { $('log').innerHTML = m; };
 function setScreen(h) { H = h; resizeCanvas(); StarField.build(); Scene.setSize(); }
 function hit(x, y) {
+  const lr = langRect();
+  if (x >= lr[0] - 8 && x <= lr[2] + 8 && y >= lr[1] - 8 && y <= lr[3] + 8) return 'lang';
   const sr = soundRect();
   if (x >= sr[0] - 8 && x <= sr[2] + 8 && y >= sr[1] - 8 && y <= sr[3] + 8) return 'sound';   // nút icon có vùng chạm rộng thêm 8dp
   if (state.mode === 'planet') {
@@ -661,6 +688,7 @@ function hit(x, y) {
 function activate(id) {
   if (id === 'play') { if (state.mode === 'planet') { state.playT = 0; launchBurst(); } log(`Chơi ngay → <b>${nextLabel()}</b>`); }
   else if (id === 'map') { if (state.mode === 'planet') state.mapT = 0; log('Bản đồ → mở màn chọn màn'); }
+  else if (id === 'lang') { state.lang = LANGS[(LANGS.indexOf(state.lang) + 1) % LANGS.length]; log('Ngôn ngữ → <b>' + LANG_CODES[state.lang] + '</b> (lưu lại, chữ đổi ngay)'); }
   else { state.sound = !state.sound; log('Âm thanh → ' + (state.sound ? '<b>bật</b>' : '<b>tắt</b>')); }
 }
 function pos(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; }
@@ -669,6 +697,7 @@ cv.addEventListener('pointermove', e => { if (state.pressed) state.inside = hit(
 cv.addEventListener('pointerup', () => { if (state.pressed && state.inside) activate(state.pressed); state.pressed = null; state.inside = false; });
 cv.addEventListener('pointercancel', () => { state.pressed = null; state.inside = false; });
 
+$('lang').onchange = e => { state.lang = e.target.value; };
 $('mode').onchange = e => { state.mode = e.target.value; };
 $('next').onchange = e => { state.next = +e.target.value; };
 $('pos').onchange = e => { state.pos = e.target.value; };
