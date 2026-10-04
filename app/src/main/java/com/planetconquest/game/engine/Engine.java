@@ -57,6 +57,8 @@ public final class Engine {
     private final List<Asteroid> neutralsView = Collections.unmodifiableList(neutrals);
     private final ArrayList<Float> neutTimers = new ArrayList<Float>();
     private float time, clock;
+    private OrbitPattern orbit = new OrbitPattern(1, 1);
+    private final float[] orbitTmp = new float[2];
     private boolean over;
     private float lastAttack;
 
@@ -134,6 +136,7 @@ public final class Engine {
         rockRadius = Math.max(2.4f * dp, unit * 0.0075f);
         map = new MapGenerator(W, H, dp, unit);
         effects.setDensity(dp);
+        orbit = new OrbitPattern(dp, unit);
         placePlanets();
     }
 
@@ -393,27 +396,19 @@ public final class Engine {
     }
 
     // ---------- Quỹ đạo ----------
-    /** Vị trí các viên đá đang quay quanh hành tinh (tối đa 60). Dùng chung cho vẽ và cho vòng khoanh. */
+    /** Vị trí các viên đá đang bay hỗn loạn quanh hành tinh (tối đa 60). Dùng chung cho vẽ và cho vòng khoanh. */
     public int orbitDots(Planet p, float[] ox, float[] oy) {
-        float R = p.radius(), gap = Math.max(6 * dp, unit * .017f), first = Math.max(9 * dp, unit * .026f);
-        int dc = Math.min(p.rocks(), 60), idx = 0, ring = 0;
-        while (idx < dc) {
-            int m = Math.min(10 + ring * 6, dc - idx);
-            float rad = R + first + ring * gap, sp = (ring % 2 == 1 ? -1 : 1) * (.9f / (1 + ring * .45f));
-            for (int k = 0; k < m; k++) {
-                float a = p.visual.seed + clock * sp + k * TAU / m;
-                ox[idx + k] = p.x() + cos(a) * rad; oy[idx + k] = p.y() + sin(a) * rad;
-            }
-            idx += m; ring++;
+        int dc = Math.min(p.rocks(), OrbitPattern.MAX_DOTS);
+        for (int i = 0; i < dc; i++) {
+            orbit.position(i, p.visual.seed, clock, p.x(), p.y(), p.radius(), orbitTmp);
+            ox[i] = orbitTmp[0]; oy[i] = orbitTmp[1];
         }
         return dc;
     }
 
-    public int orbitRings(Planet p, float[] radii) {
-        float R = p.radius(), gap = Math.max(6 * dp, unit * .017f), first = Math.max(9 * dp, unit * .026f);
-        int dc = Math.min(p.rocks(), 60), idx = 0, ring = 0;
-        while (idx < dc && ring < radii.length) { radii[ring] = R + first + ring * gap; idx += Math.min(10 + ring * 6, dc - idx); ring++; }
-        return ring;
+    /** Bán kính ngoài của dải quỹ đạo (bằng bán kính hành tinh nếu không còn đá chờ). */
+    public float orbitOuterRadius(Planet p) {
+        return p.rocks() > 0 ? orbit.outerRadius(p.radius()) : p.radius();
     }
 
     // ---------- Truy vấn cho HUD ----------

@@ -11,6 +11,8 @@ Hiệu ứng đã dựng: nháy sáng khi chiếm/lên cấp/thiên thạch, vò
 đá bay kèm vệt đuôi, hạt vỡ khi trúng, chữ bay (Chiếm được / Bị chiếm / -dmg / Cấp x), thiên thạch,
 đá vàng khi được chọn, vòng chọn, vòng đích kèm nhãn, vòng gợi ý đầu ván, vòng tầm bay, tự sinh đá.
 
+Quỹ đạo đá quanh hành tinh (`drawOrbit` / `orbitDotPos`, hằng `ORBIT_*`): mỗi viên bay hỗn loạn với tốc độ, chiều quay, dải bán kính, dao động hướng tâm và nhiễu góc riêng (hash theo chỉ số viên), không còn vòng đều.
+
 ## levels.html: màn chọn màn (lộ trình hành tinh)
 
 Mở `http://localhost:8000/levels.html`. Bản đồ cuộn dọc, Hướng dẫn ở dưới, Endless ở trên cùng.

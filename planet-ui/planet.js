@@ -136,31 +136,36 @@ function drawPlanet(p, fogged, clock) {
   text('Máu ' + (fogged ? '?' : hp(p)), x, y + R * .6, small, 'rgba(255,255,255,' + (0xB3 / 255) + ')');
 }
 
-// Engine.orbitDots / orbitRings: tối đa 60 viên, vòng m = 10 + 6*ring, vòng lẻ quay ngược.
+// Engine.orbitDots: tối đa 60 viên, mỗi viên bay HỖN LOẠN quanh hành tinh (không còn vòng đều).
+// Mỗi viên có tham số riêng suy ra từ chỉ số (hash ổn định): tốc độ góc + chiều quay, dải bán kính, dao động
+// hướng tâm, và nhiễu tốc độ góc, nên quỹ đạo là hoa văn rosette đan chéo nhau nhưng không bao giờ rời hành tinh.
 // hl = số viên đầu tiên được tô vàng và phóng to 1.3× (đang được chọn)
+const ORBIT_MAX_DOTS = 60;
+const ORBIT_BAND_RINGS = 4;       // độ dày dải quỹ đạo, tính theo số "gap"
+const ORBIT_SPEED_MIN = .5, ORBIT_SPEED_MAX = 1.6;    // rad/s, chiều quay ngẫu nhiên theo viên
+const ORBIT_RADIAL_AMP = 1.3;     // biên độ dao động hướng tâm (đơn vị gap)
+const ORBIT_RADIAL_FREQ = [.6, 1.9]; // rad/s
+const ORBIT_JITTER_AMP = .6, ORBIT_JITTER_FREQ = [.8, 2.4]; // nhiễu góc (rad) và tần số
+function orbitHash(i, salt) { const v = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return v - Math.floor(v); }
+function orbitDotPos(i, seed, clock, R, gap, first) {
+  const h = salt => orbitHash(i, salt);
+  const w = (h(1) < .5 ? -1 : 1) * (ORBIT_SPEED_MIN + h(2) * (ORBIT_SPEED_MAX - ORBIT_SPEED_MIN));
+  const base = R + first + h(3) * ORBIT_BAND_RINGS * gap;
+  const rad = base + ORBIT_RADIAL_AMP * gap * Math.sin(clock * (ORBIT_RADIAL_FREQ[0] + h(4) * (ORBIT_RADIAL_FREQ[1] - ORBIT_RADIAL_FREQ[0])) + h(5) * TAU);
+  const jit = ORBIT_JITTER_AMP * Math.sin(clock * (ORBIT_JITTER_FREQ[0] + h(6) * (ORBIT_JITTER_FREQ[1] - ORBIT_JITTER_FREQ[0])) + h(7) * TAU);
+  const a = seed + h(8) * TAU + clock * w + jit;
+  return [Math.cos(a) * rad, Math.sin(a) * rad];
+}
 function drawOrbit(p, clock, hl) {
   const x = W / 2, y = H / 2, R = radius(p);
   const gap = Math.max(6 * DP, UNIT * .017), first = Math.max(9 * DP, UNIT * .026);
-  const dc = Math.min(p.rocks, 60), col = COLORS[p.owner];
+  const dc = Math.min(p.rocks, ORBIT_MAX_DOTS), col = COLORS[p.owner];
   const dot = Math.max(1.8 * DP, UNIT * .0055);
-  ctx.lineWidth = DP;
-  let idx = 0, ring = 0;
-  const dots = [];
-  while (idx < dc) {
-    const m = Math.min(10 + ring * 6, dc - idx);
-    const rad = R + first + ring * gap, sp = (ring % 2 === 1 ? -1 : 1) * (.9 / (1 + ring * .45));
-    ctx.strokeStyle = alpha(col, .12); circle(x, y, rad, true);
-    for (let k = 0; k < m; k++) {
-      const a = p.seed + clock * sp + k * TAU / m;
-      dots.push([x + Math.cos(a) * rad, y + Math.sin(a) * rad]);
-    }
-    idx += m; ring++;
-  }
-  dots.forEach(([dx, dy], i) => {
-    const on = i < hl;
+  for (let i = 0; i < dc; i++) {
+    const [ox, oy] = orbitDotPos(i, p.seed, clock, R, gap, first), on = i < hl;
     ctx.fillStyle = on ? C_GOLD : alpha(col, .92);
-    circle(dx, dy, on ? dot * 1.3 : dot, false);
-  });
+    circle(x + ox, y + oy, on ? dot * 1.3 : dot, false);
+  }
 }
 
 // ---- Hiệu ứng (Effects.java) ----

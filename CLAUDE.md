@@ -93,7 +93,7 @@ planet-conquest/
       engine/           Java thuần, không phụ thuộc Android
         Engine, GameEvent, EndReason, Haptic, Msg, Notice
         model/          Planet, PlanetVisual, Rock, Asteroid, Body, Faction, AiState, Selection,
-                        Particle, FloatText
+                        Particle, FloatText, OrbitPattern
         rules/          LevelRule, RuleSet và các hạn chế (NoUpgrade, NoProduction, Fog, Cooldown,
                         Range, CapacityCap, EnemyProduction, TimeLimit, AsteroidImpact)
         ai/             AiStrategy, DefaultAi, PassiveAi
