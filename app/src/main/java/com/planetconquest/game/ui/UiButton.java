@@ -10,7 +10,7 @@ import android.graphics.RectF;
  */
 public final class UiButton {
     public enum Style { PRIMARY, SECONDARY, GHOST, ICON, SMALL }
-    public enum Icon { NONE, PAUSE, BACK }
+    public enum Icon { NONE, PAUSE, BACK, SOUND_ON, SOUND_OFF }
 
     public final String label;
     public final Style style;

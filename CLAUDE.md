@@ -70,7 +70,7 @@ planet-conquest/
   README.md             Mô tả game, cách build, điều khiển
   build.sh              Build APK không cần Gradle (./build.sh | install | test)
   build.gradle, app/build.gradle, settings.gradle, gradle.properties   Cấu hình Gradle
-  planet-ui/            PROTOTYPE giao diện bằng HTML/CSS/JS (index.html, style.css, planet.js, levels.html, levels.js, README.md)
+  planet-ui/            PROTOTYPE giao diện bằng HTML/CSS/JS (index.html, style.css, planet.js, levels.html, levels.js, welcome.html, welcome.js, README.md)
   prototype/web/        Prototype HTML5 ban đầu, chỉ tham chiếu luật chơi
   tools/gen_audio.py    Sinh âm thanh
   docs/, screenshots/   Tài liệu, ảnh
@@ -85,7 +85,8 @@ planet-conquest/
                         (+ Screen, BaseScreen, ScreenHost, Screens)
       session/          GameSession: màn hiện tại, Endless, bước Hướng dẫn, dữ liệu màn kết thúc
       ui/               UiButton, Dialog, DrawKit, Painter, Palette, StarField, WorldRenderer, WelcomeScene,
-                        LevelPlanet, LevelPlanetRenderer, LevelPath (bản đồ chọn màn)
+                        LevelPlanet, LevelPlanetRenderer, LevelPath (bản đồ chọn màn),
+                        WelcomePlayIcon, WelcomeCompass (nút trên màn Welcome)
       audio/            Sfx, Sound, MusicTrack
       data/             ProgressStore (SharedPreferences)
       text/             Texts: cổng duy nhất tra chuỗi

@@ -25,7 +25,7 @@ import static com.planetconquest.game.engine.util.MathUtil.sin;
  * của người chơi định kỳ bắn đá sang hành tinh đỏ, các hành tinh đối thủ, vành đai thiên thạch chéo và
  * thiên thạch tiền cảnh mờ. Camera đẩy vào rất chậm, mỗi lớp lệch một chút theo độ sâu (parallax).
  * Shader, path và số ngẫu nhiên tạo sẵn; mỗi khung hình chỉ biến đổi canvas, không cấp phát.
- * Chừa trống phần trên giữa (tiêu đề) và khoảng 25% dưới cùng (nút).
+ * Chừa trống phần trên giữa (tiêu đề). Hành tinh xanh ở giữa là nút Chơi ngay nên cảnh lộ vị trí/bán kính đã tính camera.
  */
 public final class WelcomeScene {
 
@@ -36,6 +36,11 @@ public final class WelcomeScene {
             {.86f, .635f, .062f, 2, 1.08f, .42f, 8},
             {.13f, .615f, .05f, 3, .78f, -.3f, 0},
             {.085f, .45f, .028f, 4, .6f, .6f, 0},
+            // Khu vực dưới (không còn nút chữ nhật): bốn hành tinh nhỏ xa dần, chừa góc hai nút phụ
+            {.30f, .80f, .036f, 5, .86f, .4f, 0},
+            {.64f, .755f, .024f, 6, .70f, -.45f, 0},
+            {.47f, .845f, .02f, 8, .62f, .5f, 0},
+            {.80f, .775f, .03f, 9, .90f, -.3f, 0},
     };
     private static final int SAND = 8;                          // màu cát xám cho hành tinh bị xé
     private static final float TILT = -16f, SQ = .3f;           // góc nghiêng và độ dẹt của đĩa bồi tụ
@@ -45,10 +50,13 @@ public final class WelcomeScene {
             {.18f, .30f, .42f, 0x6A3CE0, .16f}, {.85f, .20f, .35f, 0x2A70E0, .14f},
             {.70f, .78f, .45f, 0x5A3CC8, .12f}, {.30f, .70f, .30f, 0x288CC8, .10f}};
     private static final float[] FG_Y = {.30f, .47f, .62f, .70f, .40f};
-    // 3 vòng đá quanh hành tinh xanh: số đá, tốc độ góc. Loạt phóng lấy đá từ chính các vòng này.
-    private static final int[] RING_CNT = {12, 18, 24};
-    private static final float[] RING_SPD = {.6f, -.4f, .28f};
-    private static final int[] SLOT_OFF = {0, 2, -2};
+    // Đá quay hỗn loạn (mỗi viên bán kính, độ dẹt, góc nghiêng, tốc độ, chiều riêng). Hành tinh xanh 36 viên, loạt phóng
+    // lấy đá số i * LAUNCH_DOT_STEP; hành tinh đỏ/vàng ít hơn số đá gốc MESSY_EXTRA viên.
+    private static final int MESSY_COUNT_PLAYER = 36, LAUNCH_DOT_STEP = 4, MESSY_EXTRA = -2;
+    private static final float MESSY_SPEED_MIN = .25f, MESSY_SPEED_RANGE = 1.1f;
+    // Vành đai dưới bay từ phải sang trái: đầu, cuối (tỉ lệ màn hình), bề rộng (× H), hệ số tốc độ so với vành đai trên
+    private static final float[] LOW_BELT = {1.15f, .70f, -.15f, .80f};
+    private static final float LOW_BELT_HALF = .035f, LOW_BELT_SPEED = 1.5f, LOW_BELT_PHASE = .37f;
     // Mốc thời gian trong một chu kỳ phóng: tụ sáng, rời vòng, mọc lại đá mới
     private static final float CHARGE = .3f, LAUNCH_AT = .35f, REGROW_A = 2.9f, REGROW_B = 3.8f;
     // Hành tinh bị xé: đường xoắn vào hố đen (góc đầu, bán kính đầu × cạnh ngắn, góc quét), vết khoét
@@ -76,6 +84,10 @@ public final class WelcomeScene {
     private final float[] crackL = new float[CRACKS], crackB = new float[CRACKS];
     private final Path tornBody = new Path(), tornEdge = new Path(), tornCracks = new Path(), tornGhost = new Path();
     private float tornR;
+    private float playScale = 1, playGlow;                      // hiệu ứng nhấn/chạm của hành tinh xanh (nút Chơi ngay)
+    private float playX, playY, playR;                          // tâm, bán kính hành tinh xanh trên màn hình (đã tính camera)
+    private float mx, my, mh1, mh2, mal;                        // kết quả của messyDot
+    private int mdir;
 
     private final float[] beltS = new float[BELT], beltN = new float[BELT], beltSize = new float[BELT],
             beltRot = new float[BELT], beltSpin = new float[BELT], beltDepth = new float[BELT], beltCol = new float[BELT];
@@ -133,12 +145,20 @@ public final class WelcomeScene {
             crackL[i] = .35f + r.nextFloat() * .3f;
             crackB[i] = (r.nextFloat() - .5f) * .5f;
         }
+        for (int i = 0; i < LAUNCH_N; i++) lSlot[i] = i * LAUNCH_DOT_STEP;
         for (int i = 0; i < FG; i++) {
             fgX[i] = r.nextFloat();
             fgV[i] = 34 + r.nextFloat() * 26;
             fgSize[i] = 10 + r.nextFloat() * 12;
         }
     }
+
+    /** Hiệu ứng của hành tinh xanh (nút Chơi ngay): scale co/phồng, glow là độ chớp trắng 0..1. */
+    public void setPlayFx(float scale, float glow) { playScale = scale; playGlow = glow; }
+    /** Tâm và bán kính hành tinh xanh trên màn hình, đã tính camera (đúng sau khung vừa vẽ). */
+    public float playX() { return playX; }
+    public float playY() { return playY; }
+    public float playRadius() { return playR; }
 
     public void setSize(float w, float h) {
         W = w; H = h; U = Math.min(w, h);
@@ -182,14 +202,19 @@ public final class WelcomeScene {
         drawNebula(c, t);
         drawPlanet(c, 4, t);
         drawPlanet(c, 3, t);
+        drawPlanet(c, 7, t);
+        drawPlanet(c, 6, t);
+        drawPlanet(c, 8, t);
+        drawPlanet(c, 5, t);
         drawBlackHole(c, t);
-        drawBelt(c, t);
+        drawBelt(c, t, false);
+        drawBelt(c, t, true);
         drawPlanet(c, 1, t);
-        launchSlots(t);
         drawPlanet(c, 0, t);
         drawLaunch(c, t);
         drawPlanet(c, 2, t);
         drawForeground(c, t);
+        playX = camX(PL[0][0] * W, PL[0][4]); playY = camY(PL[0][1] * H, PL[0][4]); playR = PL[0][2] * U * (1 + zoom);
         fill.setShader(topS); fill.setAlpha(255); c.drawRect(0, 0, W, H * .26f, fill);
         fill.setShader(botS); c.drawRect(0, H * .66f, W, H, fill);
         fill.setShader(null);
@@ -231,6 +256,7 @@ public final class WelcomeScene {
         int o = (int) p[3];
         cam(c, p[4]);
         c.translate(p[0] * W, p[1] * H);
+        if (i == 0) c.scale(playScale, playScale);
         float pulse = .5f + .5f * sin(t * (i == 0 ? 1.7f : .9f) + i);
         c.save();
         float k = 1 + (i == 0 ? .07f : .03f) * pulse;
@@ -265,51 +291,44 @@ public final class WelcomeScene {
         stroke.setColor(0x47FFFFFF);
         stroke.setStrokeWidth(1.5f * dp);
         c.drawCircle(0, 0, r, stroke);
+        if (i == 0 && playGlow > 0) { fill.setColor(alpha(0xFFFFFFFF, playGlow)); c.drawCircle(0, 0, r, fill); }
 
-        if (i == 0) {
+        if (i == 0 || p[6] > 0) {                           // đá quay hỗn loạn
+            int n = i == 0 ? MESSY_COUNT_PLAYER : (int) p[6] + MESSY_EXTRA;
             float lt = t % LAUNCH_PERIOD;
-            for (int ring = 0; ring < 3; ring++) {
-                float rad = ringRad(ring);
-                stroke.setColor(alpha(FC[0], .12f)); stroke.setStrokeWidth(dp);
-                c.drawCircle(0, 0, rad, stroke);
-                for (int d = 0; d < RING_CNT[ring]; d++) {
-                    float sc = dotScale(ring, d, lt);
-                    if (sc <= 0) continue;                  // đá này đã rời vòng, đang bay hoặc chưa mọc lại
-                    float a = t * RING_SPD[ring] + d * MathUtil.TAU / RING_CNT[ring], dx = cos(a) * rad, dy = sin(a) * rad;
-                    float hot = Math.max(0, sc - 1) / .6f;  // tụ sáng ngay trước khi phóng
-                    fill.setColor(alpha(FC[0], .18f + .25f * hot)); c.drawCircle(dx, dy, 4.5f * dp * sc, fill);
-                    fill.setColor(alpha(ColorUtil.mix(FL[0], 0xFFFFFFFF, hot), .95f)); c.drawCircle(dx, dy, 2.1f * dp * sc, fill);
-                }
-            }
-        } else if (p[6] > 0) {
-            int n = (int) p[6];
-            float rad = r + 9 * dp;
-            fill.setColor(alpha(FC[o], .9f));
             for (int d = 0; d < n; d++) {
-                float a = t * (i % 2 == 0 ? .5f : -.5f) + d * MathUtil.TAU / n;
-                c.drawCircle(cos(a) * rad, sin(a) * rad, 1.8f * dp, fill);
+                float sc = i == 0 ? dotScale(d, lt) : 1;
+                if (sc <= 0) continue;                      // đá này đã rời quỹ đạo, đang bay hoặc chưa mọc lại
+                messyDot(i, d, t, r);
+                float hot = Math.max(0, sc - 1) / .6f;
+                if (i == 0) {
+                    fill.setColor(alpha(FC[0], (.12f + .25f * hot) * mal)); c.drawCircle(mx, my, 4.5f * dp * sc, fill);
+                    fill.setColor(alpha(ColorUtil.mix(FL[0], 0xFFFFFFFF, hot), .95f * mal)); c.drawCircle(mx, my, 2.1f * dp * sc, fill);
+                } else {
+                    fill.setColor(alpha(FC[o], .55f + .4f * mh1)); c.drawCircle(mx, my, (1.2f + mh2 * 1.2f) * dp, fill);
+                }
             }
         }
         c.restore();
     }
 
-    private float ringRad(int k) { return PL[0][2] * U + (14 + 10 * k) * dp; }
-
-    // Chọn cho mỗi viên trong loạt phóng một chỗ trên vòng: chỗ đang ở phía hướng về hành tinh đỏ lúc phóng
-    private void launchSlots(float t) {
-        float cs = t - t % LAUNCH_PERIOD;
-        float tg = (float) Math.atan2((PL[1][1] - PL[0][1]) * H, (PL[1][0] - PL[0][0]) * W);
-        for (int i = 0; i < LAUNCH_N; i++) {
-            int k = i % 3, n = RING_CNT[k];
-            float li = cs + LAUNCH_AT + i * LAUNCH_GAP;
-            int base = Math.round((tg - li * RING_SPD[k]) / (MathUtil.TAU / n));
-            lSlot[i] = ((base + SLOT_OFF[i / 3]) % n + n) % n;
-        }
+    /** Vị trí (so với tâm hành tinh i) của viên đá d ở thời điểm t trên quỹ đạo hỗn loạn; ghi vào mx, my, mh1, mh2, mdir, mal. */
+    private void messyDot(int i, int d, float t, float r) {
+        float h1 = hash(i * 91.7 + d * 12.9898, 43758.5453), h2 = hash(i * 37.1 + d * 78.233, 24634.6345), h3 = hash(i * 5.3 + d * 3.17, 9371.13);
+        mdir = h2 < .4f ? -1 : 1;
+        float a = t * (MESSY_SPEED_MIN + h1 * MESSY_SPEED_RANGE) * mdir + h3 * MathUtil.TAU;
+        float rx = r + (5 + h2 * 20) * dp, ry = rx * (.55f + h1 * .45f), tilt = h3 * MathUtil.TAU;
+        float ex = cos(a) * rx, ey = sin(a) * ry;
+        mx = ex * cos(tilt) - ey * sin(tilt);
+        my = ex * sin(tilt) + ey * cos(tilt);
+        mh1 = h1; mh2 = h2; mal = .6f + .4f * h1;
     }
 
-    // Tỉ lệ vẽ một viên đá trên vòng: >1 đang tụ sáng, 0 đã bay đi, 0..1 đang mọc lại, 1 bình thường
-    private float dotScale(int ring, int d, float lt) {
-        for (int i = ring; i < LAUNCH_N; i += 3) {
+    private static float hash(double x, double k) { double v = Math.sin(x) * k; return (float) (v - Math.floor(v)); }
+
+    // Tỉ lệ vẽ một viên đá của hành tinh xanh: >1 đang tụ sáng, 0 đã bay đi, 0..1 đang mọc lại, 1 bình thường
+    private float dotScale(int d, float lt) {
+        for (int i = 0; i < LAUNCH_N; i++) {
             if (lSlot[i] != d) continue;
             float li = LAUNCH_AT + i * LAUNCH_GAP;
             if (lt < li - CHARGE) return 1;
@@ -331,9 +350,9 @@ public final class WelcomeScene {
         for (int i = 0; i < LAUNCH_N; i++) {
             float li = LAUNCH_AT + i * LAUNCH_GAP, u = (lt - li) / FLIGHT;
             if (u < 0 || u > 1) continue;
-            int k = i % 3;
-            float rad = ringRad(k), an = (cs + li) * RING_SPD[k] + lSlot[i] * MathUtil.TAU / RING_CNT[k], sg = Math.signum(RING_SPD[k]);
-            float p0x = ax + cos(an) * rad, p0y = ay + sin(an) * rad;
+            messyDot(0, lSlot[i], cs + li, a[2] * U);        // đá rời quỹ đạo từ đúng vị trí hỗn loạn lúc phóng
+            float an = (float) Math.atan2(my, mx), sg = mdir;
+            float p0x = ax + mx, p0y = ay + my;
             float vx = wex - p0x, vy = wey - p0y, dd = (float) Math.hypot(vx, vy);
             float p1x = p0x - sin(an) * sg * dd * .22f + cos(an) * dd * .1f, p1y = p0y + cos(an) * sg * dd * .22f + sin(an) * dd * .1f;
             float p2x = (p0x + wex) / 2 - vy * .22f, p2y = (p0y + wey) / 2 + vx * .22f;
@@ -635,12 +654,19 @@ public final class WelcomeScene {
         }
     }
 
-    private void drawBelt(Canvas c, float t) {
-        cam(c, .85f);
-        float half = .05f * H, nx = -bdy, ny = bdx;
+    // low = false: vành đai chéo trên (trái sang phải); true: vành đai dưới (phải sang trái, nhanh hơn, lệch pha)
+    private void drawBelt(Canvas c, float t, boolean low) {
+        cam(c, low ? .7f : .85f);
+        float ox = b0x, oy = b0y, ddx = bdx, ddy = bdy, len = bLen, half = .05f * H, spd = 9, ph = 0;
+        if (low) {
+            float x0 = LOW_BELT[0] * W, y0 = LOW_BELT[1] * H, x1 = LOW_BELT[2] * W, y1 = LOW_BELT[3] * H;
+            ox = x0; oy = y0; len = (float) Math.hypot(x1 - x0, y1 - y0);
+            ddx = (x1 - x0) / len; ddy = (y1 - y0) / len; half = LOW_BELT_HALF * H; spd = LOW_BELT_SPEED * 9; ph = LOW_BELT_PHASE;
+        }
+        float nx = -ddy, ny = ddx;
         for (int i = 0; i < BELT; i++) {
-            float s = frac(beltS[i] + t * beltDepth[i] * 9 * dp / bLen) * bLen;
-            float x = b0x + bdx * s + nx * beltN[i] * half, y = b0y + bdy * s + ny * beltN[i] * half;
+            float s = frac(beltS[i] + ph + t * beltDepth[i] * spd * dp / len) * len;
+            float x = ox + ddx * s + nx * beltN[i] * half, y = oy + ddy * s + ny * beltN[i] * half;
             float sz = beltSize[i] * dp, a = .45f + .5f * (beltDepth[i] - .55f) / .6f;
             c.save();
             c.translate(x, y);

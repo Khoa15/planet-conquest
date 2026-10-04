@@ -94,6 +94,8 @@ public final class DrawKit {
             case SMALL: fillC = b.pressed ? ColorUtil.mix(C_GOLD, 0xFF000000, .18f) : C_GOLD; textC = 0xFF241A00; break;
             default: fillC = b.pressed ? 0xF01E2650 : C_PANEL; textC = C_INK; strokeC = C_LINE; break;
         }
+        if (b.icon == UiButton.Icon.SOUND_ON) { textC = C_YOU; strokeC = ColorUtil.alpha(C_YOU, .55f); }   // bật: xanh ngọc; tắt: xám
+        else if (b.icon == UiButton.Icon.SOUND_OFF) textC = C_MUTED;
         if (fillC != 0) { fill.setColor(fillC); c.drawRoundRect(r, rad, rad, fill); }
         if (strokeC != 0) { stroke.setColor(strokeC); stroke.setStrokeWidth(1.2f * dp); c.drawRoundRect(r, rad, rad, stroke); }
         if (b.style == UiButton.Style.ICON) drawIcon(c, b.icon, r.centerX(), r.centerY(), textC);
@@ -106,6 +108,18 @@ public final class DrawKit {
             fill.setColor(col);
             tmp.set(cx - 7 * dp, cy - 8 * dp, cx - 2.5f * dp, cy + 8 * dp); c.drawRoundRect(tmp, 1.5f * dp, 1.5f * dp, fill);
             tmp.set(cx + 2.5f * dp, cy - 8 * dp, cx + 7 * dp, cy + 8 * dp); c.drawRoundRect(tmp, 1.5f * dp, 1.5f * dp, fill);
+        } else if (icon == UiButton.Icon.SOUND_ON || icon == UiButton.Icon.SOUND_OFF) {
+            fill.setColor(col); stroke.setColor(col); stroke.setStrokeWidth(2 * dp);
+            path.reset();
+            path.moveTo(cx - 9 * dp, cy - 3.5f * dp); path.lineTo(cx - 5 * dp, cy - 3.5f * dp); path.lineTo(cx + dp, cy - 8 * dp);
+            path.lineTo(cx + dp, cy + 8 * dp); path.lineTo(cx - 5 * dp, cy + 3.5f * dp); path.lineTo(cx - 9 * dp, cy + 3.5f * dp); path.close();
+            c.drawPath(path, fill);
+            if (icon == UiButton.Icon.SOUND_ON) {
+                for (float r : new float[]{5, 9}) { tmp.set(cx + dp - r * dp, cy - r * dp, cx + dp + r * dp, cy + r * dp); c.drawArc(tmp, -52, 104, false, stroke); }
+            } else {
+                c.drawLine(cx + 5 * dp, cy - 4 * dp, cx + 12 * dp, cy + 4 * dp, stroke);
+                c.drawLine(cx + 12 * dp, cy - 4 * dp, cx + 5 * dp, cy + 4 * dp, stroke);
+            }
         } else if (icon == UiButton.Icon.BACK) {
             stroke.setColor(col); stroke.setStrokeWidth(2.6f * dp);
             path.reset(); path.moveTo(cx + 4 * dp, cy - 8 * dp); path.lineTo(cx - 4 * dp, cy); path.lineTo(cx + 4 * dp, cy + 8 * dp);
