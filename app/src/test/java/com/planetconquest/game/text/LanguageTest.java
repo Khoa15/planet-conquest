@@ -15,12 +15,14 @@ public class LanguageTest {
         assertEquals(Language.VI, Language.fromTag("vi", Language.EN));
         assertEquals(Language.EN, Language.fromTag(null, Language.EN));
         assertEquals(Language.VI, Language.fromTag("fr", Language.VI));
+        assertEquals(Language.EN, Language.fromTag("fr", Language.DEFAULT));
     }
 
     @Test public void systemLanguageFollowsDeviceOrDefaults() {
         assertEquals(Language.EN, Language.forSystem("en"));
         assertEquals(Language.VI, Language.forSystem("vi"));
-        assertEquals(Language.DEFAULT, Language.forSystem("ja"));
+        assertEquals(Language.EN, Language.forSystem("ja"));
+        assertEquals(Language.EN, Language.DEFAULT);
     }
 
     @Test public void tagsAndCodesAreUnique() {

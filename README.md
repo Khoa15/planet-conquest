@@ -50,7 +50,7 @@ app/src/main/java/com/planetconquest/game/
   audio/                Sfx (SoundPool + AudioTrack), Sound, MusicTrack
   data/ProgressStore    Tiến độ lưu trong SharedPreferences
   data/LanguageStore    Ngôn ngữ đã chọn (VI/EN), lưu trong SharedPreferences
-  text/Texts            Cổng duy nhất tra chuỗi (res/values/ tiếng Việt, res/values-en/ tiếng Anh), đổi ngôn ngữ lúc chạy
+  text/Texts            Cổng duy nhất tra chuỗi (res/values/ tiếng Anh mặc định, res/values-vi/ tiếng Việt), đổi ngôn ngữ lúc chạy
   text/Language         Ngôn ngữ hỗ trợ, Java thuần
   engine/               Logic Java thuần, không phụ thuộc Android
     Engine.java         Luật chơi và vòng mô phỏng, điều phối các thành phần dưới đây

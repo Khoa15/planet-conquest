@@ -7,8 +7,8 @@ public enum Language {
     VI("vi", "VI"),
     EN("en", "EN");
 
-    /** Ngôn ngữ dùng khi máy đặt ngôn ngữ không được hỗ trợ (khớp res/values/). */
-    public static final Language DEFAULT = VI;
+    /** Ngôn ngữ dùng khi máy đặt ngôn ngữ không được hỗ trợ (khớp res/values/, tiếng Anh). */
+    public static final Language DEFAULT = EN;
 
     public final String tag;
     /** Mã hai chữ hiển thị trên nút đổi ngôn ngữ. */
