@@ -85,4 +85,30 @@ public class MapGenerationTest extends EngineTestBase {
             assertEquals(540f, me().x(), 1f);
         }
     }
+
+    @Test
+    public void restartingEndlessLevelKeepsSameMap() {
+        for (float[] s : SIZES) {
+            e.setSize(s[0], s[1], s[2]);
+            Random r = new Random(11);
+            for (int k = 0; k < 20; k++) {
+                Level L = Levels.endless(1 + k % 10, r);
+                start(L);
+                float[][] first = positions();
+                start(L);                                   // chơi lại cùng đối tượng Level, như GameSession.restart()
+                float[][] again = positions();
+                assertEquals(first.length, again.length);
+                for (int i = 0; i < first.length; i++) {
+                    assertEquals(first[i][0], again[i][0], 0.01f);
+                    assertEquals(first[i][1], again[i][1], 0.01f);
+                }
+            }
+        }
+    }
+
+    private float[][] positions() {
+        float[][] out = new float[e.planets.size()][2];
+        for (int i = 0; i < out.length; i++) { out[i][0] = e.planets.get(i).x(); out[i][1] = e.planets.get(i).y(); }
+        return out;
+    }
 }

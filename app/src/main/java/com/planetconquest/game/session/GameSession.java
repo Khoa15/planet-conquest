@@ -93,15 +93,9 @@ public final class GameSession {
         eng.start(endlessLevel);
     }
 
-    /** Chơi lại đúng màn đang chơi (Endless: giữ nguyên bản đồ hiện tại). */
+    /** Chơi lại đúng màn đang chơi, dùng cho cả Tạm dừng và màn thua (Endless: giữ nguyên bản đồ và số thứ tự bản đồ hiện tại). */
     public void restart() {
         if (isEndless()) { introStep = 0; eng.start(endlessLevel); }
-        else startLevel(curLevel);
-    }
-
-    /** Chơi lại từ đầu: Endless quay về bản đồ 1. */
-    public void again() {
-        if (isEndless()) newEndlessRun();
         else startLevel(curLevel);
     }
 
