@@ -26,7 +26,7 @@ final class LevelSelectScreen extends BaseScreen {
     private static final float NODE_STEP = 128, TOP_PAD = 110, BOTTOM_PAD = 90;
     private static final float NODE_R = 26, INTRO_R = 22, ENDLESS_R = 36, TAP_SLOP = 8, LIT_SECONDS = .9f, HEADER_H = 62;
     /** Tỉ lệ x của từng nút theo chiều rộng màn hình (0 = Hướng dẫn ... cuối = Endless). */
-    private static final float[] ZIGZAG_X = {.5f, .28f, .72f, .3f, .7f, .27f, .73f, .32f, .68f, .3f, .5f};
+    private static final float[] ZIGZAG_X = {.5f, .28f, .72f, .3f, .7f, .27f, .73f, .32f, .68f, .3f, .7f, .5f};
 
     private final int endless = Levels.ALL.length;    // chỉ số nút Endless; các nút 0..endless-1 là Hướng dẫn + chiến dịch
     private final int nodes = endless + 1;

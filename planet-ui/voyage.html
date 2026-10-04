@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planet Conquest – Màn 10 · Viễn chinh</title>
+<link rel="stylesheet" href="style.css">
+<style>canvas{height:640px}</style>
+</head>
+<body>
+<main>
+  <canvas id="stage" width="360" height="640"></canvas>
+  <section class="panel">
+    <h1>Màn 10 · Viễn chinh</h1>
+    <p style="margin:0;font-size:13px;color:#8f99c8">Kéo từ hành tinh xanh của bạn sang hành tinh khác để gửi đá. Không giới hạn tầm bay: đánh được mọi hành tinh, nhưng đá bay rất chậm. Hành tinh ít đá hiện vòng đỏ nhấp nháy: hở sườn.</p>
+    <label>Tỉ lệ đá gửi đi <input id="frac" autocomplete="off" type="range" min="10" max="100" value="50"></label>
+    <label>Tốc độ đá (× bình thường) <input id="spd" autocomplete="off" type="range" min="10" max="100" value="25"></label>
+    <button id="reset">Chơi lại</button>
+    <b id="end" style="color:#4ff0b4"></b>
+  </section>
+</main>
+<script src="voyage.js"></script>
+</body>
+</html>

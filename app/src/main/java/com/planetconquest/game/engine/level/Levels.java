@@ -7,7 +7,7 @@ import com.planetconquest.game.engine.rules.*;
 
 import java.util.Random;
 
-/** Danh sách màn: [0] Hướng dẫn, [1..9] chiến dịch, cộng chế độ Endless sinh ngẫu nhiên. */
+/** Danh sách màn: [0] Hướng dẫn, [1..10] chiến dịch, cộng chế độ Endless sinh ngẫu nhiên. */
 public final class Levels {
     private Levels() {}
 
@@ -53,12 +53,16 @@ public final class Levels {
         Level l9 = make(10, 9931L, 38, 16, 22, 6);
         l9.rules.add(new EnemyProductionRule(2));
 
-        Level[] all = {intro, l1, l2, l3, l4, l5, l6, l7, l8, l9};
+        Level l10 = make(5, 10037L, 30, 20, 26, 3);
+        l10.rules.add(new SlowRocksRule(.25f, 8));       // không giới hạn tầm bay: khoảng cách xa + đá chậm là thử thách
+        l10.edgeMarginX = 72; l10.gap = .47f; l10.bodyScale = .4f; l10.aiGrace = 16;
+
+        Level[] all = {intro, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10};
         for (int i = 1; i < all.length; i++) all[i].boldShift = -0.02f * (i - 1);
         return all;
     }
 
-    /** Endless: bản đồ ngẫu nhiên 3-10 hành tinh, không hạn chế, thiên thạch đâm vào hành tinh. */
+    /** Endless: bản đồ ngẫu nhiên 3-10 hành tinh, không hạn chế tầm bay, thiên thạch đâm vào hành tinh; hành tinh nhỏ, cách xa, đá bay chậm như màn 10. */
     public static Level endless(int map, Random r) {
         Level L = new Level();
         L.endless = true;
@@ -70,6 +74,8 @@ public final class Levels {
         L.nrMin = .014f; L.nrMax = .05f; L.nsMin = .05f; L.nsMax = .11f;
         L.boldShift = -0.015f * (map - 1);
         L.rules.add(new AsteroidImpactRule());
+        L.rules.add(new SlowRocksRule(.25f, 0));          // cùng cảm giác "xa" với màn 10: đá chậm, hành tinh nhỏ, cách nhau xa
+        L.gap = .47f; L.bodyScale = .4f;
         return L;
     }
 }

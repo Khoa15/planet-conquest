@@ -17,7 +17,7 @@ Quỹ đạo đá quanh hành tinh (`drawOrbit` / `orbitDotPos`, hằng `ORBIT_*
 
 Mở `http://localhost:8000/levels.html`. Bản đồ cuộn dọc, Hướng dẫn ở dưới, Endless ở trên cùng.
 
-- Mỗi màn một hành tinh riêng, màu không trùng nhau (`LEVELS` trong `levels.js`): mầm lục, đại dương lam, kho vành đai cam, sa mạc vàng nứt, đỏ sọc tốc độ, tím vòng tầm ngắn, xám lam sương mù, nâu bãi thiên thạch, hồng vòng nạp đạn, lục lam xung tăng tốc. Endless là hố đen có đĩa bồi tụ.
+- Mỗi màn một hành tinh riêng, màu không trùng nhau (`LEVELS` trong `levels.js`): mầm lục, đại dương lam, kho vành đai cam, sa mạc vàng nứt, đỏ sọc tốc độ, tím vòng tầm ngắn, xám lam sương mù, nâu bãi thiên thạch, hồng vòng nạp đạn, lục lam xung tăng tốc, xanh ngọc Viễn chinh (hành tinh nhỏ, đoàn đá đi chậm trên đường chấm tới một hành tinh xa, `voyage`). Endless là hố đen có đĩa bồi tụ.
 - Chưa qua: hành tinh tối (`shade`, `DARK_AMOUNT`), không quầng sáng. Qua màn: sáng dần trong `LIT_SECONDS`, có quầng sáng. Màn kế tiếp có vòng vàng nét đứt.
 - Đường nối (`buildPath`): nội suy giữa hai nút cộng lệch ngang bằng hai sóng sin, bao `sin(pi t)` để khớp hai đầu; nét đứt mờ khi chưa mở, sáng chuyển màu hai đầu kèm hạt chạy khi màn trước đã qua.
 - Bảng bên phải: qua màn kế, qua tất cả, đặt lại, kỷ lục Endless, tạm dừng. Chạm hành tinh để xem hạn chế.
@@ -45,3 +45,12 @@ Hành tinh xanh của người chơi trong cảnh nền là nút **Chơi ngay**,
 - Khu vực dưới màn hình (trống sau khi bỏ nút chữ nhật) có thêm bốn hành tinh nhỏ trong `PL` (chỉ số 5-8; hồng, vàng, be, chàm), chừa góc hai nút phụ. Khi chuyển sang native thêm đúng các dòng này vào `WelcomeScene.PL` và cập nhật ghi chú "chừa khoảng 25% dưới cùng".
 - Hành tinh đỏ và vàng: đá quay hỗn loạn (`MESSY_*`, đỏ 8 viên, vàng 6 viên; mỗi viên bán kính/tốc độ/chiều/độ lệch tâm riêng); hành tinh xanh giữ nguyên 3 vòng đều. Thêm vành đai thiên thạch phía dưới bay từ phải sang trái (`LOW_BELT`).
 - Đã bỏ vòng vàng gợi ý quanh hành tinh xanh. Hành tinh xanh cũng có đá quay hỗn loạn (`MESSY_COUNT_PLAYER` = 36 viên); loạt phóng lấy đá số `i * LAUNCH_DOT_STEP` từ chính vị trí hỗn loạn lúc phóng.
+
+## voyage.html: màn 10 · Viễn chinh (bản chơi thử)
+
+Mở `http://localhost:8000/voyage.html`. Dùng lại đúng bộ vẽ của `planet.js` (`drawBody`, `drawOrbit`, nền sao, đá có vệt đuôi, vòng chọn/đích, `pill`), thêm mô phỏng tối thiểu và kéo-thả từ hành tinh của bạn sang hành tinh khác.
+
+- Hằng số luật đặt đầu file, trùng tên bản native sẽ làm: `ROCK_SPEED_SCALE` (SlowRocksRule), `PLANET_GAP` (Level.gap; màn KHÔNG giới hạn tầm bay), `BODY_SCALE` (thu nhỏ hành tinh, quỹ đạo, đá, chữ; hành tinh nhỏ chỉ hiện số đá ở giữa), `THIN_GUARD`.
+- Cue mới: vòng đỏ nhấp nháy quanh hành tinh của bạn khi số đá dưới `THIN_GUARD` ("hở sườn").
+- Thanh trượt: tỉ lệ đá gửi, tốc độ đá. AI bắt đầu đánh sau `AI_GRACE` giây.
+- HUD (thanh trên, chỉ icon, ô vuông 44dp kiểu `ICON`): **Back** (trái, `HUD_MARGIN`), **Âm thanh** (phải, cạnh Tạm dừng; bật = xanh ngọc, tắt = xám có dấu X, bấm để đổi) và **Tạm dừng** (phải cùng). Hằng `HUD_BTN`, `HUD_TOP`, `HUD_GAP`; `BACK_ACTION` ghi hành vi nút Back đang chờ chốt.

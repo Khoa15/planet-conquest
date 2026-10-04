@@ -13,6 +13,9 @@ public final class Level {
     public float aiGrace = -1;           // -1: dùng mặc định
     public float neutralSize = 1f, nrMin = .016f, nrMax = .03f, nsMin = .03f, nsMax = .08f;
     public float boldShift = 0f;
+    public float edgeMarginX = 0;        // dp; > 0: lề ngang tối thiểu của tâm hành tinh (0 = mặc định của MapGenerator)
+    public float gap = 0;                // theo unit; > 0: khoảng cách tối thiểu giữa hai hành tinh (0 = mặc định)
+    public float bodyScale = 1f;         // thu nhỏ hành tinh, quỹ đạo và đá để cùng khoảng cách trông xa hơn
     public float[][] fixed;              // vị trí cố định {nx, ny, size} (màn Hướng dẫn)
 
     /** Các hạn chế của màn (mỗi hạn chế là một LevelRule). */

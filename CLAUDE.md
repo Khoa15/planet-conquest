@@ -15,7 +15,7 @@ Bạn là một kỹ sư game/Android senior của dự án này.
 
 - Người chơi sở hữu một hành tinh và những viên đá quay quanh nó. **Khoanh vòng** để chọn đá, **kéo** tới hành tinh khác để tấn công, **chạm** để nâng cấp hành tinh, mục tiêu là chiếm toàn bộ bản đồ.
 - Các hành tinh AI cũng đánh nhau và đánh bạn.
-- Nội dung: màn Hướng dẫn, 9 màn có hạn chế riêng (không nâng cấp, sương mù, hồi chiêu, giới hạn tầm/sức chứa, thiên thạch, giới hạn thời gian...), và chế độ Endless.
+- Nội dung: **Hướng dẫn** (màn chơi đầu), 10 màn có hạn chế riêng (không nâng cấp, sương mù, hồi chiêu, giới hạn tầm/sức chứa, thiên thạch, giới hạn thời gian...), và **Endless** (màn chơi cuối, chơi vô hạn).
 - Luồng màn hình: Welcome → Chọn màn → Mô tả màn → Chơi ↔ Tạm dừng → Kết thúc. Tạm dừng là dừng thật (gỡ vòng lặp khung hình).
 - Thiết kế then chốt: engine là Java thuần tách khỏi Android để kiểm thử luật chơi trên JVM; giao diện nằm ở `screen/` và `ui/`.
 
@@ -95,7 +95,7 @@ planet-conquest/
         model/          Planet, PlanetVisual, Rock, Asteroid, Body, Faction, AiState, Selection,
                         Particle, FloatText, OrbitPattern
         rules/          LevelRule, RuleSet và các hạn chế (NoUpgrade, NoProduction, Fog, Cooldown,
-                        Range, CapacityCap, EnemyProduction, TimeLimit, AsteroidImpact)
+                        Range, SlowRocks, CapacityCap, EnemyProduction, TimeLimit, AsteroidImpact)
         ai/             AiStrategy, DefaultAi, PassiveAi
         input/          GestureController, GestureMode, Pointer
         physics/        CollisionGrid
@@ -122,3 +122,11 @@ Quy ước đặt code mới:
 
 Không tạo gói/thư mục mới ngoài sơ đồ trên khi chưa cần; nếu phải thêm, cập nhật mục này trong cùng commit.
 Khi cấu trúc thư mục thay đổi, cập nhật cả CLAUDE.md và README.md.
+
+## 4. Quy tắc đặt hành tinh trên bản đồ
+
+- **Lề an toàn**: tâm mọi hành tinh phải cách viền màn hình **≥ 72dp theo chiều ngang** (`Level.edgeMarginX`, truyền vào `MapGenerator.layout`) và **≥ 100dp theo chiều dọc** (cố định bởi `MapGenerator.top()` / `bottom()`). Dọc 100dp khớp `MapGenerator.top()` / `bottom()` (chỗ cho HUD và thanh điều hướng); ngang 72dp = dải quỹ đạo ngoài cùng (~38dp) + chỗ đặt ngón tay và vùng vuốt cạnh của Android (~30dp). Đặt sát viền thì khó kéo/khoảng và bị cắt quỹ đạo, nhãn đích.
+- Vùng đặt hành tinh vì vậy là `[72, W-72] x [100, H-100]` (màn nào đặt `Level.edgeMarginX` thì `padX` bằng lề đó).
+- Màn mới bắt buộc theo quy tắc này. Màn cũ giữ bố cục hiện tại, chỉ đổi khi user yêu cầu (đổi lề làm dịch bản đồ và cân bằng).
+- Khi cần khoảng cách giữa các hành tinh lớn trong vùng hẹp, **thu nhỏ vật thể** (`Level.bodyScale`, đã nối vào bán kính hành tinh, quỹ đạo `OrbitPattern`, đá và chữ) thay vì đặt sát viền.
+- Mọi prototype có bố cục bản đồ (`planet-ui/`) phải đặt hằng `EDGE_MARGIN_X` / `EDGE_MARGIN_Y` và dùng cùng vùng đặt này để đối chiếu với native.

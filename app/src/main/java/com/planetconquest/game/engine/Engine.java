@@ -122,7 +122,8 @@ public final class Engine {
     public float rateOf(Planet p) {
         return rules().productionRate(p, PRODUCE_BASE + PRODUCE_STEP * (p.level() - 1));
     }
-    public int asteroidDamage(Asteroid a) { float k = a.rad / unit; return Math.max(2, Math.round(k * k * ASTEROID_DMG_K)); }
+    /** Sát thương tính theo cỡ tương đối so với hành tinh (chia bodyScale) nên thu nhỏ vật thể không làm màn dễ đi. */
+    public int asteroidDamage(Asteroid a) { float k = a.rad / (unit * lvl.bodyScale); return Math.max(2, Math.round(k * k * ASTEROID_DMG_K)); }
     public Notice capMsg(Planet p) {
         Notice blocked = rules().upgradeBlocked();
         if (blocked != null) return blocked;
@@ -133,22 +134,31 @@ public final class Engine {
     public void setSize(float w, float h, float density) {
         W = w; H = h; dp = density;
         unit = Math.min(W, H * 0.6f);
-        rockRadius = Math.max(2.4f * dp, unit * 0.0075f);
         map = new MapGenerator(W, H, dp, unit);
         effects.setDensity(dp);
-        orbit = new OrbitPattern(dp, unit);
+        applyBodyScale();
         placePlanets();
     }
 
+    /** Hệ số thu nhỏ vật thể của màn hiện tại (Level.bodyScale). */
+    public float bodyScale() { return lvl.bodyScale; }
+
+    private void applyBodyScale() {
+        float k = lvl.bodyScale;
+        rockRadius = Math.max(Math.max(1.3f * dp, 2.4f * dp * k), unit * 0.0075f * k);
+        orbit = new OrbitPattern(dp, unit, k);
+    }
+
     private void placePlanets() {
-        for (Planet p : planets) p.place(p.nx() * W, map.y(p.ny()), unit * p.size());
+        for (Planet p : planets) p.place(p.nx() * W, map.y(p.ny()), unit * p.size() * lvl.bodyScale);
     }
 
     // ---------- Khởi tạo màn ----------
     public void start(Level L) {
         lvl = L;
         Random r = new Random(L.seed);
-        float[][] pts = L.fixed != null ? L.fixed : map.layout(r, L.planets, L.rules.rangeFraction() > 0 ? unit * L.rules.rangeFraction() : 0);
+        float[][] pts = L.fixed != null ? L.fixed : map.layout(r, L.planets, L.rules.rangeFraction() > 0 ? unit * L.rules.rangeFraction() : 0, L.edgeMarginX, L.gap);
+        applyBodyScale();
         planets.clear();
         for (int i = 0; i < pts.length; i++) {
             int startRocks = i == 0 ? L.playerN : Math.round(L.enemyMin + r.nextFloat() * (L.enemyMax - L.enemyMin));
@@ -168,7 +178,7 @@ public final class Engine {
     }
 
     private void spawnNeutral(boolean fromEdge) {
-        float rad = unit * randRange(lvl.nrMin, lvl.nrMax) * lvl.neutralSize;
+        float rad = unit * randRange(lvl.nrMin, lvl.nrMax) * lvl.neutralSize * lvl.bodyScale;
         float x = 0, y = 0, ang;
         if (fromEdge) {
             int side = rnd.nextInt(4);
@@ -226,7 +236,7 @@ public final class Engine {
             rules().onLaunch(src);
         }
         src.addRocks(-count);
-        float sr = src.radius(), aim = (float) Math.atan2(dy - src.y(), dx - src.x()), spd = unit * ROCK_SPEED;
+        float sr = src.radius(), aim = (float) Math.atan2(dy - src.y(), dx - src.x()), spd = unit * ROCK_SPEED * rules().rockSpeedScale();
         if (dest != null && !feed && dest.owner() != src.owner()) lastAttack = time;
         for (int i = 0; i < count; i++) {
             float a = feed ? randRange(0, TAU) : aim + randRange(-.8f, .8f);

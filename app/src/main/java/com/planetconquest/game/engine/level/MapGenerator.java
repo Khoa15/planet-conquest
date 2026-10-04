@@ -22,12 +22,16 @@ public final class MapGenerator {
     public float y(float ny) { return top() + (bottom() - top()) * ny; }
 
     /** Sinh vị trí {nx, ny, size}. Người chơi luôn ở đáy giữa. rangeP > 0: mỗi hành tinh nằm trong tầm của một hành tinh trước đó. */
-    public float[][] layout(Random r, int n, float rangeP) {
+    public float[][] layout(Random r, int n, float rangeP) { return layout(r, n, rangeP, 0, 0); }
+
+    /** Như trên; edgeMarginDp > 0 đặt lề ngang tối thiểu (dp) và minGapUnit > 0 đặt khoảng cách tối thiểu giữa hai hành tinh (theo unit, tự hạ khi bản đồ đông). */
+    public float[][] layout(Random r, int n, float rangeP, float edgeMarginDp, float minGapUnit) {
         float top = top(), bottom = bottom();
-        float padX = Math.max(48 * dp, unit * .13f), y0 = top + 22 * dp, y1 = bottom - 6 * dp;
+        float padX = edgeMarginDp > 0 ? edgeMarginDp * dp : Math.max(48 * dp, unit * .13f), y0 = top + 22 * dp, y1 = bottom - 6 * dp;
         float area = (W - 2 * padX) * (y1 - y0);
         float minD = clamp((float) Math.sqrt(area / n) * .85f, 92 * dp, 170 * dp);
         if (rangeP > 0) minD = Math.min(minD, rangeP * .55f);
+        if (minGapUnit > 0) minD = Math.min(minGapUnit * unit, (float) Math.sqrt(area / n) * 1.1f);   // bản đồ đông thì tự hạ để vẫn nhét vừa
         float base = n >= 9 ? .056f : n >= 7 ? .062f : .07f;
         float[] xs = new float[n], ys = new float[n];
         for (int attempt = 0; attempt < 80; attempt++) {

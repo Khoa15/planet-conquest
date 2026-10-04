@@ -69,7 +69,7 @@ Engine tách khỏi Android nên toàn bộ luật chơi được kiểm thử t
 | Màn hình | Nội dung |
 |---|---|
 | Welcome | Tiêu đề, hoạt ảnh hành tinh, nút **Chơi** và **Hướng dẫn** |
-| Chọn màn | Danh sách Hướng dẫn, 9 màn, Endless; đánh dấu màn đã qua |
+| Chọn màn | Danh sách Hướng dẫn, 10 màn, Endless; đánh dấu màn đã qua |
 | Mô tả màn | Hạn chế của màn và cách vượt qua |
 | Chơi | HUD gọn (hành tinh, đá, đồng hồ/bản đồ), nút tạm dừng |
 | Tạm dừng | Tiếp tục, Chơi lại, Thoát ra menu |
@@ -113,7 +113,8 @@ dẫn qua 5 bước có gợi ý trực quan. Giao diện khi chơi không còn 
 | 7. Bãi thiên thạch | 8 | 22 thiên thạch to chặn đường |
 | 8. Nạp đạn | 9 | Mỗi hành tinh gửi quân 4 giây một lần |
 | 9. Đối thủ tăng tốc | 10 | Đối thủ sinh đá gấp đôi |
-| Endless | 3–10 ngẫu nhiên | Không hạn chế; thiên thạch đâm hành tinh, càng to càng mất máu |
+| 10. Viễn chinh | 5 | Hành tinh cách rất xa (lề ngang 72dp, dọc 100dp), không giới hạn tầm bay, đá bay ×0.25, vật thể thu nhỏ ×0.4; hành tinh còn dưới 8 đá bị cảnh báo "hở sườn" |
+| Endless | 3–10 ngẫu nhiên | Không giới hạn tầm bay; hành tinh nhỏ ×0.4, cách xa (0.47 unit, tự hạ khi bản đồ đông), đá bay ×0.25; thiên thạch đâm hành tinh, càng to càng mất máu |
 
 Thông số cân bằng nằm ở đầu `Engine.java`; cấu hình từng màn ở `engine/level/Levels.java`; hạn chế của màn là các `LevelRule` trong `engine/rules/`.
 
