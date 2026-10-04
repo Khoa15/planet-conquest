@@ -171,7 +171,18 @@ public final class WorldRenderer extends Painter {
             stroke.setStrokeWidth(3 * dp); stroke.setColor(alpha(0xFFFFFFFF, p.visual.flash));
             c.drawCircle(p.x(), p.y(), R * (1 + (1 - p.visual.flash) * 1.3f), stroke);
         }
+        int thin = eng.rules().thinGuardBelow();
+        if (thin > 0 && Faction.isPlayer(p.owner()) && p.rocks() < thin) {     // hở sườn: vòng đỏ nhấp nháy
+            stroke.setStrokeWidth(3 * dp); stroke.setColor(alpha(C_DANGER, .45f + .45f * Math.abs(sin(eng.clock() * 4))));
+            c.drawCircle(p.x(), p.y(), R + 12 * dp, stroke);
+        }
         String n = fg ? "?" : String.valueOf(p.rocks());
+        if (eng.bodyScale() < 1) {                                             // hành tinh nhỏ: chỉ còn số đá ở giữa
+            float one = Math.max(11 * dp, R * .8f);
+            text(c, n, p.x() + dp, p.y() + dp, one, 0x73000000, tfBold, Paint.Align.CENTER);
+            text(c, n, p.x(), p.y(), one, 0xFFFFFFFF, tfBold, Paint.Align.CENTER);
+            return;
+        }
         float big = Math.max(13 * dp, R * .6f), small = Math.max(8 * dp, R * .27f);
         text(c, n, p.x() + dp, p.y() - R * .24f + dp, big, 0x73000000, tfBold, Paint.Align.CENTER);
         text(c, n, p.x(), p.y() - R * .24f, big, 0xFFFFFFFF, tfBold, Paint.Align.CENTER);
@@ -182,7 +193,7 @@ public final class WorldRenderer extends Painter {
     private void drawOrbit(Canvas c, Planet p) {
         if (eng.fogged(p)) return;
         int dc = eng.orbitDots(p, dotX, dotY), hl = eng.highlightCount(p);
-        float dot = Math.max(1.8f * dp, eng.unit() * .0055f);
+        float dot = Math.max(Math.max(1.1f * dp, 1.8f * dp * eng.bodyScale()), eng.unit() * .0055f * eng.bodyScale());
         int normal = alpha(FC[p.owner()], .92f);
         for (int i = 0; i < dc; i++) {
             boolean on = i < hl;

@@ -49,6 +49,7 @@ public final class LevelPlanetRenderer extends Painter {
             case BELT: belt(c, x, y, R, col, lit, t); break;
             case RELOAD: reload(c, x, y, R, col, lit, t); break;
             case SURGE: surge(c, x, y, R, col, lit, t); break;
+            case VOYAGE: voyage(c, x, y, R, col, lit, t); break;
             default: blackHole(c, x, y, R, lit, t); break;
         }
     }
@@ -169,6 +170,26 @@ public final class LevelPlanetRenderer extends Painter {
         stroke.setStrokeWidth(2 * dp); stroke.setColor(alpha(shade(col, lit), .35f + .5f * lit));
         c.drawCircle(x, y, R * 1.45f, stroke);
         stroke.setPathEffect(null);
+    }
+
+    /** Viễn chinh: hành tinh nhỏ, đoàn đá đi chậm trên đường chấm dài tới một hành tinh xa. */
+    private void voyage(Canvas c, float x, float y, float R, int col, float lit, float t) {
+        float far = R * 2.3f, ang = -.62f, ca = cos(ang), sa = sin(ang), fx = x + ca * far, fy = y + sa * far, ph = (t * .16f) % 1;
+        int sc = shade(col, lit);
+        stroke.setPathEffect(new DashPathEffect(new float[]{2 * dp, 6 * dp}, 0));
+        stroke.setStrokeWidth(1.6f * dp); stroke.setColor(alpha(sc, .3f + .4f * lit));
+        c.drawLine(x + ca * R * 1.15f, y + sa * R * 1.15f, fx - ca * R * .3f, fy - sa * R * .3f, stroke);
+        stroke.setPathEffect(null);
+        fill.setColor(alpha(shade(0xFFFFFFFF, lit), .3f + .6f * lit));
+        c.drawCircle(x + (fx - x) * (.18f + .64f * ph), y + (fy - y) * (.18f + .64f * ph), 2 * dp, fill);   // đoàn đá chậm
+        fill.setColor(alpha(sc, .45f + .5f * lit));
+        c.drawCircle(fx, fy, R * .26f, fill);                                                           // hành tinh đích ở xa
+        float r = R * .9f;
+        body(c, x, y, r, col, lit); clipBody(c, x, y, r);
+        stroke.setColor(alpha(0xFFFFFFFF, .1f + .25f * lit)); stroke.setStrokeWidth(R * .1f);
+        path.reset(); path.moveTo(x - R, y + R * .2f); path.quadTo(x, y - R * .1f, x + R, y + R * .25f);
+        c.drawPath(path, stroke);
+        c.restore(); rim(c, x, y, r, lit);
     }
 
     private void fog(Canvas c, float x, float y, float R, int col, float lit, float t) {

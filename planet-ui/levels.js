@@ -8,7 +8,7 @@ const W = 360, VIEW_H = 640;
 // ---------- Hằng số bố cục (đặt tên giống bản native) ----------
 const NODE_STEP = 128;            // khoảng cách dọc giữa hai hành tinh liên tiếp
 const TOP_PAD = 110, BOTTOM_PAD = 90;
-const ZIGZAG_X = [.5, .28, .72, .3, .7, .27, .73, .32, .68, .3, .5];   // tỉ lệ x của từng nút (0 = Hướng dẫn ... 10 = Endless)
+const ZIGZAG_X = [.5, .28, .72, .3, .7, .27, .73, .32, .68, .3, .7, .5];   // tỉ lệ x của từng nút (0 = Hướng dẫn ... 11 = Endless)
 const NODE_R = 26, INTRO_R = 22, ENDLESS_R = 36;
 const PATH_SAMPLES = 48, PATH_WOBBLE = 26, PATH_GAP = 10;               // điểm mẫu, biên độ uốn, chừa quanh hành tinh
 const PATH_WIDTH = 3, PATH_DASH_OFF = [3, 8];
@@ -29,6 +29,7 @@ const LEVELS = [
   { name: 'Bãi thiên thạch', limit: 'Thiên thạch dày đặc chặn đường: đá đụng vào sẽ vỡ.',  planets: 8,  col: 0xFF8A6A55, kind: 'belt'    },
   { name: 'Nạp đạn',         limit: 'Mỗi hành tinh chỉ gửi quân được một lần mỗi 4 giây.',  planets: 9,  col: 0xFFFF8FD8, kind: 'reload'  },
   { name: 'Đối thủ tăng tốc', limit: 'Mọi đối thủ sinh đá nhanh gấp đôi bạn.',              planets: 10, col: 0xFF00E5FF, kind: 'surge'   },
+  { name: 'Viễn chinh',      limit: 'Các hành tinh cách nhau rất xa, đá bay rất chậm. Đánh được mọi hành tinh nhưng mỗi lần gửi đá đi là hở sườn.', planets: 5, col: 0xFF2EC4B6, kind: 'voyage'  },
   { name: 'Endless',         limit: 'Bản đồ ngẫu nhiên, không hạn chế. Thiên thạch đâm vào hành tinh.', planets: 0, col: 0xFFFFB347, kind: 'blackhole' },
 ];
 const ENDLESS = LEVELS.length - 1;
@@ -253,6 +254,18 @@ const SKIN = {
     ctx.strokeStyle = `rgba(255,255,255,${.15 + .6 * lit})`; ctx.lineWidth = R * .17; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     for (const dx of [-.28, .18]) { ctx.beginPath(); ctx.moveTo(x + R * (dx - .2), y - R * .42); ctx.lineTo(x + R * (dx + .15), y); ctx.lineTo(x + R * (dx - .2), y + R * .42); ctx.stroke(); }
     ctx.restore(); rim(x, y, R, lit);
+  },
+  // 10 Viễn chinh: hành tinh nhỏ, xa xa một đốm sáng; đoàn đá đi chậm trên đường chấm dài
+  voyage(x, y, R, c, lit, t) {
+    const far = R * 2.3, ang = -.62, fx = x + Math.cos(ang) * far, fy = y + Math.sin(ang) * far, ph = (t * .16) % 1;
+    ctx.setLineDash([2, 6]); ctx.lineWidth = 1.6; ctx.strokeStyle = rgba(shade(c, lit), .3 + .4 * lit);
+    ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * R * 1.15, y + Math.sin(ang) * R * 1.15); ctx.lineTo(fx - Math.cos(ang) * R * .3, fy - Math.sin(ang) * R * .3); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = rgba(shade(0xFFFFFFFF, lit), .3 + .6 * lit); circle(x + (fx - x) * (.18 + .64 * ph), y + (fy - y) * (.18 + .64 * ph), 2); ctx.fill();   // đoàn đá chậm
+    circle(fx, fy, R * .26); ctx.fillStyle = rgba(shade(c, lit), .45 + .5 * lit); ctx.fill();                                                            // hành tinh đích ở xa
+    body(x, y, R * .9, c, lit); clipBody(x, y, R * .9);
+    ctx.strokeStyle = `rgba(255,255,255,${.1 + .25 * lit})`; ctx.lineWidth = R * .1;
+    ctx.beginPath(); ctx.moveTo(x - R, y + R * .2); ctx.quadraticCurveTo(x, y - R * .1, x + R, y + R * .25); ctx.stroke();
+    ctx.restore(); rim(x, y, R * .9, lit);
   },
   // Endless: hố đen, đĩa bồi tụ xoay và vòng bẻ cong ánh sáng
   blackhole(x, y, R, c, lit, t) {

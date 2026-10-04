@@ -34,6 +34,8 @@ public final class RuleSet extends LevelRule {
     @Override public boolean finiteRocks() { for (LevelRule r : rules) if (r.finiteRocks()) return true; return false; }
 
     @Override public float rangeFraction() { float v = 0; for (LevelRule r : rules) v = Math.max(v, r.rangeFraction()); return v; }
+    @Override public float rockSpeedScale() { float v = 1f; for (LevelRule r : rules) v *= r.rockSpeedScale(); return v; }
+    @Override public int thinGuardBelow() { int v = 0; for (LevelRule r : rules) v = Math.max(v, r.thinGuardBelow()); return v; }
     @Override public int timeLimit() { int v = 0; for (LevelRule r : rules) v = Math.max(v, r.timeLimit()); return v; }
     @Override public float cooldownSeconds() { float v = 0; for (LevelRule r : rules) v = Math.max(v, r.cooldownSeconds()); return v; }
 }

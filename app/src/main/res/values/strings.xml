@@ -35,13 +35,11 @@
     <string name="level_label">Màn %1$d · %2$s</string>
     <string name="brief_sub">%1$d hành tinh. Chiếm hết để thắng.</string>
     <string name="endless_label">Endless · Bản đồ %1$d</string>
-    <string name="endless_limit">Không có hạn chế nào: nâng cấp, sinh đá, tầm bay đều bình thường.</string>
+    <string name="endless_limit">Hành tinh nhỏ, cách nhau rất xa và đá bay chậm. Nâng cấp, sinh đá, tầm bay đều bình thường.</string>
     <string name="endless_tip">Thiên thạch trôi nổi đâm vào hành tinh và trừ giáp rồi đến đá canh gác: càng to càng mất nhiều máu.</string>
     <string name="pause_title">Tạm dừng</string>
 
     <!-- HUD và chỉ dẫn khi chơi -->
-    <string name="hud_planets">Hành tinh</string>
-    <string name="hud_rocks">Đá</string>
     <string name="hud_time_left">Còn</string>
     <string name="hud_map">Bản đồ</string>
     <string name="hud_seconds">%1$ds</string>
@@ -93,7 +91,7 @@
     <string name="end_try_endless">Thử Endless</string>
     <string name="end_lose_title">Thất bại</string>
 
-    <!-- Màn chơi: [0] Hướng dẫn, [1..9] chiến dịch -->
+    <!-- Màn chơi: [0] Hướng dẫn, [1..10] chiến dịch -->
     <string-array name="level_names">
         <item>Hướng dẫn</item>
         <item>Làm quen</item>
@@ -105,6 +103,7 @@
         <item>Bãi thiên thạch</item>
         <item>Nạp đạn</item>
         <item>Đối thủ tăng tốc</item>
+        <item>Viễn chinh</item>
     </string-array>
     <string-array name="level_limits">
         <item>Không có hạn chế. Đối thủ đứng yên để bạn tập.</item>
@@ -117,6 +116,7 @@
         <item>Thiên thạch dày đặc chặn đường: đá của bạn đụng vào sẽ vỡ.</item>
         <item>Mỗi hành tinh chỉ gửi quân được một lần mỗi 4 giây.</item>
         <item>Mọi đối thủ sinh đá nhanh gấp đôi bạn.</item>
+        <item>Các hành tinh cách nhau rất xa, đá bay rất chậm. Đánh được mọi hành tinh nhưng mỗi lần gửi đá đi là hở sườn.</item>
     </string-array>
     <string-array name="level_tips">
         <item>Làm theo từng bước hiện trên màn hình.</item>
@@ -129,6 +129,7 @@
         <item>Chọn đường bay thông thoáng, gửi dư quân để bù đá vỡ, hoặc điều đá ra chỗ trống chờ thiên thạch trôi qua.</item>
         <item>Khoanh vòng để gửi đồng loạt từ nhiều hành tinh trong một lần, và chọn đúng lúc để mỗi lần gửi đủ mạnh.</item>
         <item>Đánh sớm trước khi họ tích lũy. Hành tinh bạn chiếm được sinh đá bình thường cho bạn, nên hạ từng đối thủ một.</item>
+        <item>Chia đá vừa đủ để đánh mà vẫn giữ lại phòng thủ. Vòng đỏ nhấp nháy quanh hành tinh nghĩa là đang hở sườn: đừng gửi hết khi chưa biết đối thủ nào đang nhìn bạn.</item>
     </string-array>
 
     <!-- Các bước màn Hướng dẫn -->

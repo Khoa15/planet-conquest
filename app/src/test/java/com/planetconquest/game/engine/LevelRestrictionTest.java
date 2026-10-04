@@ -100,4 +100,82 @@ public class LevelRestrictionTest extends EngineTestBase {
         assertEquals(2f, re0, 0);
         assertEquals(1f, e.rateOf(e.planets.get(1)), 0);
     }
+
+    @Test
+    public void level10_rocksFlySlowly() {
+        start(Levels.ALL[10]); freezeAi(); Planet near = nearest();
+        int n0 = me().rocks(); drag(me(), near.x(), near.y());
+        assertTrue(n0 > me().rocks());
+        tick(1);
+        Rock r = e.rocks.get(0);
+        assertTrue("đá phải bay chậm", Math.hypot(r.vx, r.vy) <= e.unit() * Engine.ROCK_SPEED * .25f * 1.3f);
+        secs(1);
+        assertTrue("sau 1 giây đá vẫn đang bay", e.rocks.size() > 0);
+    }
+
+    @Test
+    public void endless_smallBodiesFarApartAndSlowRocks() {
+        java.util.Random r = new java.util.Random(7);
+        for (int k = 0; k < 60; k++) {
+            Level L = Levels.endless(1 + k % 10, r);
+            assertEquals(.4f, L.bodyScale, 0);
+            assertEquals(.25f, L.rules.rockSpeedScale(), 0);
+            start(L);
+            assertTrue(Float.isInfinite(e.rangePx()));
+            assertTrue("khoảng cách đủ xa với " + e.planets.size() + " hành tinh", minDist() >= 90 * e.dp());
+            assertEquals(0, L.rules.thinGuardBelow());
+        }
+    }
+
+    @Test
+    public void endless_asteroidsShrinkWithBodiesButKeepDamage() {
+        start(Levels.endless(1, new java.util.Random(5)));
+        float maxRad = e.unit() * .05f * .4f;
+        for (Asteroid ast : e.neutrals) assertTrue("thiên thạch phải nhỏ theo", ast.rad <= maxRad + .01f);
+        Asteroid ref = new Asteroid(); ref.rad = e.unit() * .05f * .4f;
+        assertEquals(e.asteroidDamage(ref), Math.max(2, Math.round(.05f * .05f * Engine.ASTEROID_DMG_K)));
+    }
+
+    @Test
+    public void level10_noRangeLimit() {
+        start(Levels.ALL[10]); freezeAi();
+        assertTrue(Float.isInfinite(e.rangePx()));
+        Planet far = null; float fd = 0;
+        for (Planet p : e.planets) { float d = (float) Math.hypot(p.x() - me().x(), p.y() - me().y()); if (d > fd) { fd = d; far = p; } }
+        int n0 = me().rocks(); drag(me(), far.x(), far.y());
+        assertTrue("gửi được tới hành tinh xa nhất", n0 > me().rocks());
+    }
+
+    @Test
+    public void level10_mapKeepsMarginsAndGaps() {
+        Level L = Levels.ALL[10];
+        float[][] sizes = {{1080, 2340, 2.75f}, {720, 1600, 2f}, {1440, 3120, 3.5f}, {1080, 1920, 3f}};
+        for (float[] sz : sizes) {
+            e.setSize(sz[0], sz[1], sz[2]); start(L);
+            String where = (int) sz[0] + "x" + (int) sz[1];
+            assertEquals(.4f, e.bodyScale(), 0);
+            for (Planet p : e.planets) {
+                assertTrue("lề ngang " + where, p.x() >= 72 * e.dp() - 1 && p.x() <= e.W() - 72 * e.dp() + 1);
+                assertTrue("lề dọc " + where, p.y() >= 100 * e.dp() && p.y() <= e.H() - 100 * e.dp());
+            }
+            assertTrue("khoảng cách tối thiểu " + where, minDist() >= .3f * e.unit());
+        }
+    }
+
+    @Test
+    public void level10_thinGuardWarningThreshold() {
+        start(Levels.ALL[10]);
+        assertEquals(8, e.rules().thinGuardBelow());
+        assertEquals(0, Levels.ALL[5].rules.thinGuardBelow());
+    }
+
+    private Planet nearest() {
+        Planet best = null; float bd = Float.MAX_VALUE;
+        for (Planet p : e.planets) {
+            if (p == me()) continue;
+            float d = (float) Math.hypot(p.x() - me().x(), p.y() - me().y());
+            if (d < bd) { bd = d; best = p; }
+        }
+        return best;
+    }
 }
