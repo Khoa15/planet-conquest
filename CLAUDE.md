@@ -11,7 +11,7 @@ Bạn là một kỹ sư game/Android senior của dự án này.
 
 ## Mô tả game
 
-**Planet Conquest** là game chiến thuật casual chơi bằng **một ngón tay** trên Android, viết **native** bằng Java (Activity + Canvas), không dùng WebView hay framework đa nền tảng. Bản hiện tại: 0.5.0 (minSdk 21, targetSdk 34).
+**Planet Conquest** là game chiến thuật casual chơi bằng **một ngón tay** trên Android, viết **native** bằng Java (Activity + Canvas), không dùng WebView hay framework đa nền tảng. Bản hiện tại: 0.5.1 (minSdk 21, targetSdk 34).
 
 - Người chơi sở hữu một hành tinh và những viên đá quay quanh nó. **Khoanh vòng** để chọn đá, **kéo** tới hành tinh khác để tấn công, **chạm** để nâng cấp hành tinh, mục tiêu là chiếm toàn bộ bản đồ.
 - Các hành tinh AI cũng đánh nhau và đánh bạn.
@@ -84,10 +84,10 @@ planet-conquest/
       screen/           Mỗi màn hình một lớp: Welcome, LevelSelect, Brief, Play, Pause, End
                         (+ Screen, BaseScreen, ScreenHost, Screens)
       session/          GameSession: màn hiện tại, Endless, bước Hướng dẫn, dữ liệu màn kết thúc
-      ui/               UiButton, Dialog, DrawKit, Painter, Palette, StarField, WorldRenderer, WelcomeScene,
+      ui/               UiButton, Dialog, DrawKit, Painter, Palette, StarField, WorldRenderer, PlanetShaders, PlanetLabels, WelcomeScene,
                         LevelPlanet, LevelPlanetRenderer, LevelPath (bản đồ chọn màn),
                         WelcomePlayIcon, WelcomeCompass (nút trên màn Welcome)
-      audio/            Sfx, Sound, MusicTrack
+      audio/            Sfx, Sound, MusicTrack, PcmDecoder (giải mã nhạc nền OGG/Opus ra PCM)
       data/             ProgressStore, LanguageStore (SharedPreferences)
       text/             Texts: cổng duy nhất tra chuỗi (đổi ngôn ngữ lúc chạy); Language (VI, EN; Java thuần, có JUnit)
       engine/           Java thuần, không phụ thuộc Android
@@ -130,3 +130,19 @@ Khi cấu trúc thư mục thay đổi, cập nhật cả CLAUDE.md và README.m
 - Màn mới bắt buộc theo quy tắc này. Màn cũ giữ bố cục hiện tại, chỉ đổi khi user yêu cầu (đổi lề làm dịch bản đồ và cân bằng).
 - Khi cần khoảng cách giữa các hành tinh lớn trong vùng hẹp, **thu nhỏ vật thể** (`Level.bodyScale`, đã nối vào bán kính hành tinh, quỹ đạo `OrbitPattern`, đá và chữ) thay vì đặt sát viền.
 - Mọi prototype có bố cục bản đồ (`planet-ui/`) phải đặt hằng `EDGE_MARGIN_X` / `EDGE_MARGIN_Y` và dùng cùng vùng đặt này để đối chiếu với native.
+
+## 5. Báo cáo hiệu năng (đọc khi cần)
+
+Khi làm việc liên quan hiệu năng (CPU, RAM, disk, cache, kích thước APK, giật khung hình) hoặc cần so sánh trước/sau một thay đổi, đọc `docs/performance-report-<version>.md` của bản mới nhất (hiện là `docs/performance-report-0.5.1.md`, so với `docs/performance-report-0.5.0.md`) để lấy mốc đối chiếu. Không cần đọc nếu việc không liên quan.
+
+Mốc 0.5.1 (emulator `vbox86p`, Android 15). CPU/FPS trên emulator nhiễu quá lớn (cùng bản, hai lượt cho kết quả ngược nhau), cần đo lại trên máy thật:
+
+| Chỉ số | 0.5.0 | 0.5.1 |
+|---|---|---|
+| APK | 3,31 MB (90% là 2 file nhạc WAV) | 0,67 MB (nhạc Opus `bgm_*.ogg`, giải mã bằng `PcmDecoder`) |
+| RAM (PSS) | 24,7 - 29,9 MB | 22,6 - 22,9 MB |
+| Native heap | ~20,9 MB | ~18,4 MB |
+| CPU / frame khi chơi | ~14 - 16% / p50 97 - 150 ms | 17 - 27% / p50 97 - 150 ms (chưa phân biệt được) |
+| Disk/Cache | Chỉ `SharedPreferences`; không dùng `cacheDir` | như cũ |
+
+Quy ước: mỗi lần phát hành hoặc đo lại, tạo file mới `docs/performance-report-<version>.md` (không ghi đè bản cũ), rồi cập nhật tên file và bảng mốc ở mục này. Đo bằng `adb` (`/proc/<pid>/stat`, `dumpsys meminfo`, `dumpsys gfxinfo`); so sánh phải build lại bản cũ và chạy cùng điều kiện, nhiều lượt. Mẹo đo: emulator cần mở app một lần rồi mở lại (lần đầu sau khi cài hay ANR); đợi ~45 s cho giải mã nhạc xong trước khi đo.

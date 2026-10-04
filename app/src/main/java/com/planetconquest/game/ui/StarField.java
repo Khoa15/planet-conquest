@@ -26,9 +26,9 @@ public final class StarField {
         float W = kit.w, H = kit.h, dp = kit.dp;
         if (W <= 0 || H <= 0) return;
         if (bg != null) bg.recycle();
-        bg = Bitmap.createBitmap((int) W, (int) H, Bitmap.Config.ARGB_8888);
+        bg = Bitmap.createBitmap((int) W, (int) H, Bitmap.Config.RGB_565);   // nền đục: 565 nhỏ bằng nửa ARGB_8888, vẽ có dither để gradient tối không bị bậc
         Canvas g = new Canvas(bg);
-        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
         p.setShader(new LinearGradient(0, 0, 0, H, 0xFF070A1C, 0xFF04050D, Shader.TileMode.CLAMP));
         g.drawRect(0, 0, W, H, p);
         float[][] neb = {{.2f, .25f, .55f}, {.88f, .62f, .6f}, {.4f, .95f, .5f}};
