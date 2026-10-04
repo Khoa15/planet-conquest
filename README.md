@@ -116,7 +116,7 @@ dẫn qua 5 bước có gợi ý trực quan. Giao diện khi chơi không còn 
 | 8. Nạp đạn | 9 | Mỗi hành tinh gửi quân 4 giây một lần |
 | 9. Đối thủ tăng tốc | 10 | Đối thủ sinh đá gấp đôi |
 | 10. Viễn chinh | 5 | Hành tinh cách rất xa (lề ngang 72dp, dọc 100dp), không giới hạn tầm bay, đá bay ×0.25, vật thể thu nhỏ ×0.4; hành tinh còn dưới 8 đá bị cảnh báo "hở sườn" |
-| Endless | 3–10 ngẫu nhiên | Không giới hạn tầm bay; hành tinh nhỏ ×0.4, cách xa (0.47 unit, tự hạ khi bản đồ đông), đá bay ×0.25; thiên thạch đâm hành tinh, càng to càng mất máu |
+| Endless | 4–10 ngẫu nhiên (vị trí hành tinh người chơi cũng ngẫu nhiên) | Không giới hạn tầm bay; hành tinh nhỏ ×0.4, cách xa (0.47 unit, tự hạ khi bản đồ đông), đá bay ×0.25; thiên thạch đâm hành tinh, càng to càng mất máu |
 
 Thông số cân bằng nằm ở đầu `Engine.java`; cấu hình từng màn ở `engine/level/Levels.java`; hạn chế của màn là các `LevelRule` trong `engine/rules/`.
 

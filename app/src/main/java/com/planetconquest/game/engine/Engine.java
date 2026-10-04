@@ -157,7 +157,7 @@ public final class Engine {
     public void start(Level L) {
         lvl = L;
         Random r = new Random(L.seed);
-        float[][] pts = L.fixed != null ? L.fixed : map.layout(r, L.planets, L.rules.rangeFraction() > 0 ? unit * L.rules.rangeFraction() : 0, L.edgeMarginX, L.gap);
+        float[][] pts = L.fixed != null ? L.fixed : map.layout(r, L.planets, L.rules.rangeFraction() > 0 ? unit * L.rules.rangeFraction() : 0, L.edgeMarginX, L.gap, L.randomPlayer);
         applyBodyScale();
         planets.clear();
         for (int i = 0; i < pts.length; i++) {

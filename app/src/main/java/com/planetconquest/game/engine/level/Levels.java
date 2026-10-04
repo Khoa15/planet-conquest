@@ -12,6 +12,8 @@ public final class Levels {
     private Levels() {}
 
     public static final Level[] ALL = build();
+    /** Số hành tinh của một bản đồ Endless, tính cả hành tinh người chơi. */
+    public static final int ENDLESS_MIN_PLANETS = 4, ENDLESS_MAX_PLANETS = 10;
     public static final int CAMPAIGN_LAST = ALL.length - 1;
 
     private static Level make(int planets, long seed, int playerN, int eMin, int eMax, int neutrals) {
@@ -62,11 +64,12 @@ public final class Levels {
         return all;
     }
 
-    /** Endless: bản đồ ngẫu nhiên 3-10 hành tinh, không hạn chế tầm bay, thiên thạch đâm vào hành tinh; hành tinh nhỏ, cách xa, đá bay chậm như màn 10. */
+    /** Endless: bản đồ ngẫu nhiên 4-10 hành tinh (gồm cả người chơi, vị trí người chơi cũng ngẫu nhiên), không hạn chế tầm bay, thiên thạch đâm vào hành tinh; hành tinh nhỏ, cách xa, đá bay chậm như màn 10. */
     public static Level endless(int map, Random r) {
         Level L = new Level();
         L.endless = true;
-        L.planets = 3 + r.nextInt(8);
+        L.planets = ENDLESS_MIN_PLANETS + r.nextInt(ENDLESS_MAX_PLANETS - ENDLESS_MIN_PLANETS + 1);
+        L.randomPlayer = true;
         L.seed = r.nextLong();
         int d = Math.min(map - 1, 8);
         L.playerN = 30; L.enemyMin = 18 + d; L.enemyMax = 26 + d;

@@ -22,11 +22,11 @@
     <string name="endless_card_desc">Bản đồ ngẫu nhiên, không hạn chế. Thiên thạch đâm vào hành tinh.</string>
     <string name="tutorial_card_desc">Học cách chơi: bạn và một đối thủ, bạn có nhiều đá hơn.</string>
     <string name="best_short">Kỷ lục %1$d</string>
-    <string name="endless_card_planets">3–10 hành tinh</string>
+    <string name="endless_card_planets">4–10 hành tinh</string>
     <string name="planets_count">%1$d hành tinh</string>
     <string name="learned">Đã học</string>
     <string name="cleared">Đã qua</string>
-    <string name="brief_endless_sub">Bản đồ ngẫu nhiên 3–10 hành tinh. Qua một bản đồ thì bản đồ tiếp theo xuất hiện, khó hơn một chút. Thua là kết thúc.</string>
+    <string name="brief_endless_sub">Bản đồ ngẫu nhiên 4–10 hành tinh. Qua một bản đồ thì bản đồ tiếp theo xuất hiện, khó hơn một chút. Thua là kết thúc.</string>
     <string name="section_limit">Hạn chế</string>
     <string name="section_note">Lưu ý</string>
     <string name="section_howto">Cách vượt qua</string>
