@@ -22,6 +22,7 @@ public final class PlayScreen extends BaseScreen {
     private final GameSession session;
     private final WorldRenderer world;
     private UiButton cancelSelBtn;
+    private static final float SPEED_BTN_W = 52, SPEED_BTN_GAP = 8;   // số liệu từ planet-ui/speed.js
     private float hudBottom, chipY;
 
     PlayScreen(ScreenHost host) {
@@ -38,6 +39,12 @@ public final class PlayScreen extends BaseScreen {
         add(new UiButton(null, UiButton.Style.ICON, UiButton.Icon.PAUSE, new Runnable() {
             @Override public void run() { eng.cancelPointer(); host.go(host.screens().pause()); }
         })).at(W - 56 * dp, 9 * dp, W - 12 * dp, 53 * dp);
+        UiButton speedBtn = add(new UiButton(tx.s(R.string.hud_speed, session.speed().valueText()), UiButton.Style.ICON, UiButton.Icon.SPEED, new Runnable() {
+            @Override public void run() { session.speed().next(); layout(); host.invalidate(); }
+        }));
+        speedBtn.highlight = session.speed().isFast();
+        float sr = W - 56 * dp - SPEED_BTN_GAP * dp;
+        speedBtn.at(sr - SPEED_BTN_W * dp, 9 * dp, sr, 53 * dp);
         cancelSelBtn = add(new UiButton(tx.s(R.string.btn_cancel), UiButton.Style.SMALL, UiButton.Icon.NONE, new Runnable() {
             @Override public void run() { eng.cancelSelection(); }
         }));
@@ -46,8 +53,9 @@ public final class PlayScreen extends BaseScreen {
 
     @Override
     public void update(float dt) {
-        eng.step(dt);                           // có thể kết thúc màn và chuyển sang màn kết thúc
-        if (!eng.over()) eng.fx(dt);
+        float f = session.speed().factor();
+        eng.step(dt * f);                           // có thể kết thúc màn và chuyển sang màn kết thúc
+        if (!eng.over()) eng.fx(dt * f);
     }
 
     @Override
@@ -77,7 +85,7 @@ public final class PlayScreen extends BaseScreen {
         txt.setTypeface(tfBold); txt.setTextSize(vs);
         float vw = txt.measureText(val);
         float w = 10 * dp + lw + 6 * dp + vw + 10 * dp, h = 38 * dp;
-        if (x + w > W() - 64 * dp && x > 12 * dp) { x = 12 * dp; y += 44 * dp; }
+        if (x + w > W() - (56 + SPEED_BTN_GAP + SPEED_BTN_W + 8) * dp && x > 12 * dp) { x = 12 * dp; y += 44 * dp; }
         tmp.set(x, y, x + w, y + h);
         panel(c, tmp, 12 * dp, C_LINE);
         text(c, label, x + 10 * dp, y + h / 2 + dp, ls, C_MUTED, tfReg, Paint.Align.LEFT);

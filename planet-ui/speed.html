@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planet Conquest – Nút tốc độ</title>
+<style>
+  body{margin:0;background:#050818;color:#dfe6ff;font:14px sans-serif;display:flex;gap:24px;padding:16px;flex-wrap:wrap}
+  canvas{background:#070b22;border-radius:12px;touch-action:none}
+  .panel{display:flex;flex-direction:column;gap:10px;min-width:220px}
+  label{display:flex;flex-direction:column;gap:4px}
+</style>
+</head>
+<body>
+<canvas id="stage" width="360" height="640"></canvas>
+<section class="panel">
+  <h3>Nút tốc độ (HUD khi chơi)</h3>
+  <p>Chạm nút cạnh nút Tạm dừng để đổi: x1 → x1.25 → x1.5 → x2 → x1.</p>
+  <label>Đồng hồ giới hạn thời gian <input id="timeChip" type="checkbox"></label>
+  <p>Tăng tốc toàn bộ game: quỹ đạo, sinh đá, đá bay, AI tấn công, đồng hồ.</p>
+  <div id="info"></div>
+</section>
+<script src="speed.js"></script>
+</body>
+</html>

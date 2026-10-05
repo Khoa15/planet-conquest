@@ -10,13 +10,15 @@ import android.graphics.RectF;
  */
 public final class UiButton {
     public enum Style { PRIMARY, SECONDARY, GHOST, ICON, SMALL }
-    public enum Icon { NONE, PAUSE, BACK, SOUND_ON, SOUND_OFF, LANGUAGE }
+    public enum Icon { NONE, PAUSE, BACK, SOUND_ON, SOUND_OFF, LANGUAGE, SPEED }
 
     public final String label;
     public final Style style;
     public final Icon icon;
     public final RectF r = new RectF();
     public boolean pressed, visible = true;
+    /** Nhấn mạnh (vàng): dùng cho nút tốc độ khi đang chạy nhanh. */
+    public boolean highlight;
     /** Mọi nhãn có thể hiện trên nút (nút LANGUAGE): bề rộng cụm canh theo nhãn rộng nhất để nút không nhảy khi đổi nhãn. */
     public String[] labelSlot = new String[0];
     private final Runnable onClick;

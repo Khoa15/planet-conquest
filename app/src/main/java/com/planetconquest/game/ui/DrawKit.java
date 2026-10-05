@@ -16,7 +16,7 @@ import static com.planetconquest.game.ui.Palette.*;
 /** Bộ công cụ vẽ dùng chung: kích thước màn hình, Paint, font và các hình cơ bản (chữ, panel, nút, viên thuốc). */
 public final class DrawKit {
     /** Nút ngôn ngữ (dp): bo góc, bán kính quả cầu, khoảng cách tới chữ, cỡ chữ. Lấy từ welcome.js. */
-    private static final float LANG_RADIUS = 12, LANG_GLOBE_R = 7, LANG_GAP = 6, LANG_TEXT = 13;
+    private static final float LANG_RADIUS = 12, LANG_GLOBE_R = 7, LANG_GAP = 6, LANG_TEXT = 13, SPEED_TEXT = 16;
 
     public final float dp;
     public float w, h;
@@ -109,9 +109,11 @@ public final class DrawKit {
         if (b.icon == UiButton.Icon.SOUND_ON) { textC = C_YOU; strokeC = ColorUtil.alpha(C_YOU, .55f); }   // bật: xanh ngọc; tắt: xám
         else if (b.icon == UiButton.Icon.SOUND_OFF) textC = C_MUTED;
         else if (b.icon == UiButton.Icon.LANGUAGE) { textC = C_YOU; strokeC = ColorUtil.alpha(C_YOU, .55f); }
+        if (b.icon == UiButton.Icon.SPEED && b.highlight) { textC = C_GOLD; strokeC = ColorUtil.alpha(C_GOLD, .55f); }
         if (fillC != 0) { fill.setColor(fillC); c.drawRoundRect(r, rad, rad, fill); }
         if (strokeC != 0) { stroke.setColor(strokeC); stroke.setStrokeWidth(1.2f * dp); c.drawRoundRect(r, rad, rad, stroke); }
         if (b.icon == UiButton.Icon.LANGUAGE) drawLanguage(c, b, textC);
+        else if (b.icon == UiButton.Icon.SPEED) text(c, b.label, r.centerX(), r.centerY() + dp, SPEED_TEXT * dp, textC, bold, Paint.Align.CENTER);
         else if (b.style == UiButton.Style.ICON) drawIcon(c, b.icon, r.centerX(), r.centerY(), textC);
         else text(c, b.label, r.centerX(), r.centerY(), (b.style == UiButton.Style.SMALL ? 13.5f : 16.5f) * dp, textC, bold, Paint.Align.CENTER);
         c.restore();
