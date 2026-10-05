@@ -42,6 +42,7 @@
     <!-- HUD and in-game hints -->
     <string name="hud_time_left">Left</string>
     <string name="hud_map">Map</string>
+    <string name="hud_speed">x%1$s</string>
     <string name="hud_seconds">%1$ds</string>
     <string name="sel_hint">%1$d rocks selected. Tap a target to send them</string>
     <string name="sel_short">%1$d rocks selected</string>

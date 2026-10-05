@@ -40,6 +40,7 @@
     <!-- HUD và chỉ dẫn khi chơi -->
     <string name="hud_time_left">Còn</string>
     <string name="hud_map">Bản đồ</string>
+    <string name="hud_speed">x%1$s</string>
     <string name="hud_seconds">%1$ds</string>
     <string name="sel_hint">Đã chọn %1$d đá. Chạm đích để điều động</string>
     <string name="sel_short">Đã chọn %1$d đá</string>

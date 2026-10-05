@@ -4,6 +4,7 @@ import com.planetconquest.game.data.ProgressStore;
 import com.planetconquest.game.engine.EndReason;
 import com.planetconquest.game.engine.Engine;
 import com.planetconquest.game.engine.GameEvent;
+import com.planetconquest.game.engine.GameSpeed;
 import com.planetconquest.game.engine.level.Level;
 import com.planetconquest.game.engine.level.Levels;
 
@@ -43,6 +44,7 @@ public final class GameSession {
     private final Engine eng;
     private final ProgressStore progress;
     private final Random rnd = new Random();
+    private final GameSpeed speed = new GameSpeed();
     private int curLevel = 0;                   // chỉ số trong Levels.ALL; -1 = Endless
     private Level endlessLevel;
     private int endlessMap = 1, endlessCleared = 0, introStep = 0;
@@ -56,6 +58,8 @@ public final class GameSession {
     public boolean isEndless() { return curLevel < 0; }
     public int endlessMap() { return endlessMap; }
     public int introStep() { return introStep; }
+    /** Tốc độ game; về x1 mỗi khi bắt đầu hoặc chơi lại màn, giữ nguyên khi tạm dừng. */
+    public GameSpeed speed() { return speed; }
 
     /** Màn nên chơi tiếp theo tiến độ: Hướng dẫn nếu chưa học, rồi màn chiến dịch đầu tiên chưa qua; -1 (Endless) khi đã qua hết. */
     public int nextLevel() {
@@ -71,7 +75,7 @@ public final class GameSession {
     }
 
     public void startLevel(int idx) {
-        curLevel = idx; introStep = 0;
+        curLevel = idx; introStep = 0; speed.reset();
         eng.start(Levels.ALL[idx]);
     }
 
@@ -88,14 +92,14 @@ public final class GameSession {
     }
 
     private void startEndless() {
-        curLevel = -1; introStep = 0;
+        curLevel = -1; introStep = 0; speed.reset();
         endlessLevel = Levels.endless(endlessMap, rnd);
         eng.start(endlessLevel);
     }
 
     /** Chơi lại đúng màn đang chơi, dùng cho cả Tạm dừng và màn thua (Endless: giữ nguyên bản đồ và số thứ tự bản đồ hiện tại). */
     public void restart() {
-        if (isEndless()) { introStep = 0; eng.start(endlessLevel); }
+        if (isEndless()) { introStep = 0; speed.reset(); eng.start(endlessLevel); }
         else startLevel(curLevel);
     }
 

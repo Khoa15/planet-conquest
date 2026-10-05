@@ -55,3 +55,7 @@ Mở `http://localhost:8000/voyage.html`. Dùng lại đúng bộ vẽ của `pl
 - Cue mới: vòng đỏ nhấp nháy quanh hành tinh của bạn khi số đá dưới `THIN_GUARD` ("hở sườn").
 - Thanh trượt: tỉ lệ đá gửi, tốc độ đá. AI bắt đầu đánh sau `AI_GRACE` giây.
 - HUD (thanh trên, chỉ icon, ô vuông 44dp kiểu `ICON`): **Back** (trái, `HUD_MARGIN`), **Âm thanh** (phải, cạnh Tạm dừng; bật = xanh ngọc, tắt = xám có dấu X, bấm để đổi) và **Tạm dừng** (phải cùng). Hằng `HUD_BTN`, `HUD_TOP`, `HUD_GAP`; `BACK_ACTION` ghi hành vi nút Back đang chờ chốt.
+
+## speed.html: nút tốc độ khi chơi
+
+Mở `http://localhost:8000/speed.html`. Nút `x1 / x1.25 / x1.5 / x2` nằm bên trái nút Tạm dừng (rộng 52dp, cách 8dp, cùng chiều cao). Chạm để xoay vòng; từ x1.25 trở lên chữ và viền chuyển vàng, nút phồng `POP_MS`. Tốc độ nhân vào `dt` của toàn bộ mô phỏng: quỹ đạo, sinh đá, đá bay, AI tấn công, đồng hồ giới hạn thời gian (3 hành tinh minh hoạ). Hằng: `SPEEDS`, `SPEED_BTN_*`, `COLOR_*`.

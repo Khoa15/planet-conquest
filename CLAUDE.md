@@ -91,7 +91,7 @@ planet-conquest/
       data/             ProgressStore, LanguageStore (SharedPreferences)
       text/             Texts: cổng duy nhất tra chuỗi (đổi ngôn ngữ lúc chạy); Language (VI, EN; Java thuần, có JUnit)
       engine/           Java thuần, không phụ thuộc Android
-        Engine, GameEvent, EndReason, Haptic, Msg, Notice
+        Engine, GameEvent, GameSpeed, EndReason, Haptic, Msg, Notice
         model/          Planet, PlanetVisual, Rock, Asteroid, Body, Faction, AiState, Selection,
                         Particle, FloatText, OrbitPattern
         rules/          LevelRule, RuleSet và các hạn chế (NoUpgrade, NoProduction, Fog, Cooldown,
