@@ -6,6 +6,8 @@ không dùng WebView hay framework đa nền tảng. Bản hiện tại: **0.5.1
 Bạn sở hữu một hành tinh và những viên đá quay quanh nó. Khoanh vòng để chọn đá, kéo tới hành tinh khác để
 tấn công, nâng cấp hành tinh, và chiếm toàn bộ bản đồ. Các hành tinh AI cũng đánh nhau và đánh bạn.
 
+![Planet Conquest gameplay](screenshots/game-intro.webp)
+
 ## Cài nhanh
 
 ```bash
