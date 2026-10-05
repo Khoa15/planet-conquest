@@ -11,7 +11,7 @@ Bạn là một kỹ sư game/Android senior của dự án này.
 
 ## Mô tả game
 
-**Planet Conquest** là game chiến thuật casual chơi bằng **một ngón tay** trên Android, viết **native** bằng Java (Activity + Canvas), không dùng WebView hay framework đa nền tảng. Bản hiện tại: 0.5.1 (minSdk 21, targetSdk 34).
+**Planet Conquest** là game chiến thuật casual chơi bằng **một ngón tay** trên Android, viết **native** bằng Java (Activity + Canvas), không dùng WebView hay framework đa nền tảng. Bản hiện tại: 0.5.2 (minSdk 21, targetSdk 34).
 
 - Người chơi sở hữu một hành tinh và những viên đá quay quanh nó. **Khoanh vòng** để chọn đá, **kéo** tới hành tinh khác để tấn công, **chạm** để nâng cấp hành tinh, mục tiêu là chiếm toàn bộ bản đồ.
 - Các hành tinh AI cũng đánh nhau và đánh bạn.
